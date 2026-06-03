@@ -1,9 +1,9 @@
-"""CLI entry point for cypher_qa.
+"""CLI entry point for the query agent.
 
 Usage:
-    python cypher_qa/main.py "your natural-language question here"
-    python cypher_qa/main.py            # interactive REPL
-    python cypher_qa/main.py cost <log> # cost breakdown for a session log
+    python query/main.py "your natural-language question here"
+    python query/main.py            # interactive REPL
+    python query/main.py cost <log> # cost breakdown for a session log
 """
 
 from __future__ import annotations
@@ -143,7 +143,7 @@ def _print_cost(log_path: str) -> None:
 def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "cost":
         if len(sys.argv) < 3:
-            sys.exit("Usage: python cypher_qa/main.py cost <log_file>")
+            sys.exit("Usage: python query/main.py cost <log_file>")
         _print_cost(sys.argv[2])
         return
 
@@ -168,7 +168,7 @@ def main() -> None:
         question_num += 1
         _ask(agent, " ".join(sys.argv[1:]), log_file, question_num, run_id)
     else:
-        print("cypher_qa REPL. Empty line or Ctrl-D to exit.\n")
+        print("Query agent REPL. Empty line or Ctrl-D to exit.\n")
         while True:
             try:
                 question = input("? ").strip()

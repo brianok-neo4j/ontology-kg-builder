@@ -1,4 +1,4 @@
-"""Tools for the cypher_qa agent.
+"""Tools for the query agent.
 
 The agent already has access to:
 - `get_ontology_schema` (imported from ingest.tools) —
