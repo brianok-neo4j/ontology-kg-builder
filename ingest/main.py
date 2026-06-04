@@ -99,12 +99,6 @@ def run_cost(log_path: str) -> None:
         print(f"Model '{model_id}' not in pricing table ({known}). Add it to _PRICING.")
         return
 
-    # Strands reports *cumulative* usage on every record. An agent that is reused
-    # for the whole run (instance / query / enhancer) therefore reports running
-    # totals — summing the per-record values triangular-counts them (off by up to
-    # ~100×). An agent that is rebuilt mid-run (ontology, rebuilt on schema change)
-    # resets its counters at each rebuild. Summing per-record *deltas*, treating a
-    # decrease as a reset, recovers the true total in both cases.
     _USAGE_KEYS = {
         "inputTokens": "total_input",
         "outputTokens": "total_output",
@@ -112,25 +106,43 @@ def run_cost(log_path: str) -> None:
         "cacheReadInputTokens": "total_cache_read",
     }
     totals = {v: 0 for v in _USAGE_KEYS.values()}
-    prev = {k: 0 for k in _USAGE_KEYS}
     chunk_events = errors = 0
-    for r in records:
-        ev = r.get("event", "")
-        if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
-            chunk_events += 1
-        if "_error" in ev:
-            errors += 1
-        u = (r.get("metrics") or {}).get("accumulated_usage") or {}
-        if not u:
-            # run_start / run_resume / error records carry no usage — skip them
-            # so they don't reset the delta tracking and double-count the next record.
-            continue
-        for key, tot_key in _USAGE_KEYS.items():
-            cur = u.get(key, 0)
-            # Monotonic increase → delta; decrease → agent was rebuilt, count the
-            # full current value as this run-segment's fresh total.
-            totals[tot_key] += cur - prev[key] if cur >= prev[key] else cur
-            prev[key] = cur
+
+    # Current logs carry a per-call `usage` delta on each chunk record (see
+    # _per_call_metrics) — those are independent and simply summed, which is
+    # correct even when parallel workers interleave their records. Older logs
+    # instead carry cumulative `metrics.accumulated_usage`; for those, sum
+    # per-record deltas (treating a decrease as an agent rebuild) to undo the
+    # cumulative running totals.
+    per_call_format = any("usage" in r for r in records)
+
+    if per_call_format:
+        for r in records:
+            ev = r.get("event", "")
+            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+                chunk_events += 1
+            if "_error" in ev:
+                errors += 1
+            u = r.get("usage") or {}
+            for key, tot_key in _USAGE_KEYS.items():
+                totals[tot_key] += u.get(key, 0)
+    else:
+        prev = {k: 0 for k in _USAGE_KEYS}
+        for r in records:
+            ev = r.get("event", "")
+            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+                chunk_events += 1
+            if "_error" in ev:
+                errors += 1
+            u = (r.get("metrics") or {}).get("accumulated_usage") or {}
+            if not u:
+                # run_start / run_resume / error records carry no usage — skip
+                # them so they don't reset delta tracking and double-count.
+                continue
+            for key, tot_key in _USAGE_KEYS.items():
+                cur = u.get(key, 0)
+                totals[tot_key] += cur - prev[key] if cur >= prev[key] else cur
+                prev[key] = cur
 
     total_input       = totals["total_input"]
     total_cache_write = totals["total_cache_write"]
@@ -231,16 +243,60 @@ def _write_resume_event(log_file: Path, n_done: int, total: int) -> None:
 # Serialises appends to the metrics log when instance chunks run concurrently.
 _LOG_LOCK = threading.Lock()
 
+_USAGE_FIELDS = (
+    "inputTokens", "outputTokens", "cacheWriteInputTokens", "cacheReadInputTokens",
+)
 
-def _log(log_file: Path, event: str, result, **extra) -> None:
+
+def _per_call_metrics(agent, result) -> dict:
+    """Lean per-invocation metrics: just what *this* call cost.
+
+    Strands reports *cumulative* usage per agent and embeds an ever-growing
+    `traces` / `agent_invocations` blob in the summary. Logging that blob every
+    chunk produced multi-hundred-MB logs (a single instance run hit 543 MB), and
+    the cumulative usage is unsummable once parallel workers interleave their
+    records. We instead diff each call against a per-agent baseline (each agent
+    is only ever used by one thread) and log only the token usage, cycle count,
+    and duration for that one call — a few hundred bytes, directly summable.
+    """
     try:
         summary = result.metrics.get_summary() if result and result.metrics else {}
     except Exception:
         summary = {}
+    cum_usage = summary.get("accumulated_usage", {}) or {}
+    cum_cycles = summary.get("total_cycles", 0) or 0
+    cum_dur = summary.get("total_duration", 0.0) or 0.0
+
+    prev = getattr(agent, "_prev_cum", None) or {}
+    prev_usage = prev.get("usage", {})
+
+    usage = {}
+    for k in _USAGE_FIELDS:
+        cur = cum_usage.get(k, 0) or 0
+        p = prev_usage.get(k, 0)
+        usage[k] = cur - p if cur >= p else cur  # decrease ⇒ fresh agent
+
+    cycles = cum_cycles - prev.get("cycles", 0)
+    if cycles < 0:
+        cycles = cum_cycles
+    dur = cum_dur - prev.get("dur", 0.0)
+    if dur < 0:
+        dur = cum_dur
+
+    # Update the baseline on the agent (single-threaded per agent, so safe).
+    agent._prev_cum = {
+        "usage": {k: (cum_usage.get(k, 0) or 0) for k in _USAGE_FIELDS},
+        "cycles": cum_cycles,
+        "dur": cum_dur,
+    }
+    return {"usage": usage, "cycles": cycles, "duration_s": round(dur, 3)}
+
+
+def _log(log_file: Path, event: str, fields: dict, **extra) -> None:
     record = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "event": event,
-        "metrics": summary,
+        **fields,
         **extra,
     }
     line = json.dumps(record) + "\n"
@@ -268,7 +324,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             event,
-            result,
+            _per_call_metrics(agent, result),
             history_depth_pre_call=history_depth,
             **log_extra,
         )
@@ -277,9 +333,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             f"{event}_error",
-            None,
-            error_type="MaxTokensReachedException",
-            error_message=str(exc),
+            {"error_type": "MaxTokensReachedException", "error_message": str(exc)},
             history_depth_pre_call=history_depth,
             **log_extra,
         )
@@ -289,9 +343,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             f"{event}_error",
-            None,
-            error_type=type(exc).__name__,
-            error_message=str(exc),
+            {"error_type": type(exc).__name__, "error_message": str(exc)},
             history_depth_pre_call=history_depth,
             **log_extra,
         )
