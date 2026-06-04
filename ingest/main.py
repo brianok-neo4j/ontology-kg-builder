@@ -15,8 +15,10 @@ against an existing schema.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,8 +46,8 @@ from ingest.agents.enhancer_agent import (
 from ingest.agents.instance_agent import (
     MODEL_ID as INSTANCE_MODEL_ID,
     MODEL_MAX_TOKENS as INSTANCE_MODEL_MAX_TOKENS,
+    _fetch_ontology_schema_json as fetch_instance_schema_json,
     build_agent as build_instance_agent,
-    build_mcp_client as build_instance_mcp,
 )
 from ingest.tools import create_document_node, create_chunk_node
 from ingest.domain_vocab import (
@@ -156,24 +158,31 @@ def run_cost(log_path: str) -> None:
         print(f"Cost/event   :              ${cost / chunk_events:.4f}")
 
 
-def _find_resumable_run(command: str, input_path: str) -> tuple[Path | None, int, str | None]:
+def _find_resumable_run(
+    command: str, input_path: str
+) -> tuple[Path | None, int, str | None, set[int]]:
     """Find the most recent interrupted run for (command, input_path).
 
     Scans all JSONL log files for a run_start matching (command, input_path),
-    then counts successful chunk events to determine how far it got.
+    then collects the set of completed chunk numbers.
 
-    Returns (log_file, n_done, run_id), or (None, 0, None) if nothing found.
+    Returns (log_file, n_done, run_id, done_nums). `done_nums` is the set of
+    1-based chunk_num values that completed — the instance stage needs this
+    because parallel workers complete out of order, so "the first n_done chunks"
+    is not the same as "the n_done chunks that finished". The ontology stage is
+    sequential and can keep using the n_done count. Returns
+    (None, 0, None, set()) if nothing is found.
     """
     if not LOG_DIR.exists():
-        return None, 0, None
+        return None, 0, None, set()
 
     chunk_event = "ontology_chunk" if command == "ontology" else "instance_chunk"
     best_ts: str | None = None
-    best: tuple[Path, int, str] | None = None
+    best: tuple[Path, int, str, set[int]] | None = None
 
     for log_file in LOG_DIR.glob("*_metrics.jsonl"):
         matched = False
-        n_done = 0
+        done_nums: set[int] = set()
         run_id = None
         try:
             with log_file.open(encoding="utf-8") as f:
@@ -188,21 +197,23 @@ def _find_resumable_run(command: str, input_path: str) -> tuple[Path | None, int
                                 record.get("input_path") == input_path):
                             matched = True
                             run_id = record.get("run_id")
-                            n_done = 0
+                            done_nums = set()
                         else:
                             matched = False
                     elif matched and event == chunk_event:
-                        n_done += 1
+                        num = record.get("chunk_num")
+                        if num is not None:
+                            done_nums.add(num)
         except Exception:
             continue
 
         if matched and run_id:
             if best_ts is None or run_id > best_ts:
                 best_ts = run_id
-                best = (log_file, n_done, run_id)
+                best = (log_file, len(done_nums), run_id, done_nums)
 
     if best is None:
-        return None, 0, None
+        return None, 0, None, set()
     return best
 
 
@@ -217,6 +228,10 @@ def _write_resume_event(log_file: Path, n_done: int, total: int) -> None:
         f.write(json.dumps(record) + "\n")
 
 
+# Serialises appends to the metrics log when instance chunks run concurrently.
+_LOG_LOCK = threading.Lock()
+
+
 def _log(log_file: Path, event: str, result, **extra) -> None:
     try:
         summary = result.metrics.get_summary() if result and result.metrics else {}
@@ -228,8 +243,9 @@ def _log(log_file: Path, event: str, result, **extra) -> None:
         "metrics": summary,
         **extra,
     }
-    with log_file.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record) + "\n")
+    line = json.dumps(record) + "\n"
+    with _LOG_LOCK, log_file.open("a", encoding="utf-8") as f:
+        f.write(line)
 
 
 def _invoke_with_recovery(
@@ -459,7 +475,7 @@ def run_ontology(
     log_file: Path | None = None
 
     if resume:
-        log_file, n_done, run_id = _find_resumable_run("ontology", str(path))
+        log_file, n_done, run_id, _ = _find_resumable_run("ontology", str(path))
         if log_file is None:
             print("No resumable run found — starting fresh.")
         elif n_done >= total:
@@ -616,6 +632,7 @@ def run_instance(
     resume: bool = False,
     verbose_summary: bool = False,
     model_id: str | None = None,
+    concurrency: int = 5,
 ) -> Path:
     chunks = list(load_documents(path))
     if not chunks:
@@ -628,17 +645,20 @@ def run_instance(
     docs = sorted({doc for doc, _, _ in chunks})
 
     n_done = 0
+    done_nums: set[int] = set()
     log_file: Path | None = None
 
     if resume:
-        log_file, n_done, run_id = _find_resumable_run("instance", str(path))
+        log_file, n_done, run_id, done_nums = _find_resumable_run("instance", str(path))
         if log_file is None:
             print("No resumable run found — starting fresh.")
         elif n_done >= total:
             print(f"All {total} chunks already completed in {log_file.name}. Nothing to do.")
             return log_file
         else:
-            print(f"Resuming {run_id}: skipping {n_done}/{total} already-processed chunks.")
+            # Parallel workers finish out of order, so skip the SET of completed
+            # chunk numbers, not just the first n_done.
+            print(f"Resuming {run_id}: skipping {n_done}/{total} already-completed chunks.")
             _write_resume_event(log_file, n_done, total)
 
     effective_model = model_id or INSTANCE_MODEL_ID
@@ -666,24 +686,52 @@ def run_instance(
 
     _ensure_instance_name_indexes()
 
-    print("\n=== Populating instance data ===")
+    # Chunks are independent and every write is an idempotent MERGE, so they can
+    # be processed concurrently. Each worker thread builds its own agent lazily
+    # and reuses it (resetting the conversation per chunk so independent chunks
+    # don't share context). All workers share one identical cached schema prefix
+    # — so the prompt cache is written once and read by the rest — and the
+    # process-wide Neo4j driver. Write contention (two workers MERGEing the same
+    # name) is handled by the exponential-backoff retry in `write_cypher`.
+    concurrency = max(1, concurrency)
+    # (global_index, chunk) for every chunk whose 1-based number isn't already
+    # done. Filtering by the done-set (not chunks[n_done:]) is what makes resume
+    # correct under out-of-order parallel completion.
+    remaining = [
+        (gi, ch) for gi, ch in enumerate(chunks) if (gi + 1) not in done_nums
+    ]
+    n_remaining = len(remaining)
+    print(f"\n=== Populating instance data ({concurrency} worker(s), "
+          f"{n_remaining} chunks) ===")
     if n_done:
-        print(f"(skipping first {n_done} chunks already processed)")
-    mcp = build_instance_mcp()
-    agent = build_instance_agent(
-        mcp, verbose_summary=verbose_summary, model_id=effective_model
-    )
+        print(f"(skipping {n_done} already-completed chunks)")
 
-    current_doc: str | None = None
-    for i, (doc, chunk, idx) in enumerate(chunks[n_done:]):
-        chunk_num = n_done + i + 1
-        if doc != current_doc:
-            current_doc = doc
-            doc_chunk_count = sum(1 for c in chunks if c[0] == doc)
-            print(f"\n--- {Path(doc).name} ({doc_chunk_count} chunks) ---")
+    # One agent per worker thread, built on first use and reused thereafter.
+    schema_json = fetch_instance_schema_json()
+    worker_local = threading.local()
 
+    def _worker_agent():
+        agent = getattr(worker_local, "agent", None)
+        if agent is None:
+            agent = build_instance_agent(
+                verbose_summary=verbose_summary,
+                model_id=effective_model,
+                schema_json=schema_json,
+            )
+            worker_local.agent = agent
+        return agent
+
+    progress = {"done": 0}
+    progress_lock = threading.Lock()
+
+    def _process_chunk(item) -> None:
+        gi, (doc, chunk, idx) = item
+        chunk_num = gi + 1
         chunk_id = chunk_ids[(doc, idx)]
-        print(f"  chunk {chunk_num}/{total}...", end=" ", flush=True)
+        agent = _worker_agent()
+        # Independent chunk: start from a clean conversation. The cached system
+        # prefix (schema) is unchanged, so the prompt cache still hits.
+        agent.messages = []
         _invoke_with_recovery(
             agent,
             (
@@ -695,7 +743,7 @@ def run_instance(
                 "Using the ontology schema provided in your system prompt, extract "
                 "instance entities and relationships from this chunk. Connect every entity "
                 "to the Chunk node via FROM_CHUNK. "
-                "Batch all of this chunk's MERGEs into a single write_neo4j_cypher call."
+                "Batch all of this chunk's MERGEs into a single write_cypher call."
             ),
             log_file,
             "instance_chunk",
@@ -704,9 +752,24 @@ def run_instance(
             total_chunks=total,
             chunk_id=chunk_id,
         )
-        print("done")
+        with progress_lock:
+            progress["done"] += 1
+            print(f"  [{progress['done']}/{n_remaining}] chunk {chunk_num} "
+                  f"({Path(doc).name}) done")
+
+    if concurrency == 1:
+        for item in remaining:
+            _process_chunk(item)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as pool:
+            # Surface any unexpected (non-recovered) worker exception.
+            for fut in concurrent.futures.as_completed(
+                pool.submit(_process_chunk, item) for item in remaining
+            ):
+                fut.result()
 
     print(f"\nDone. Metrics logged to {log_file}")
+    return log_file
 
 
 if __name__ == "__main__":
@@ -800,6 +863,18 @@ if __name__ == "__main__":
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {INSTANCE_MODEL_ID}).",
     )
+    p_instance.add_argument(
+        "--concurrency",
+        type=int,
+        default=int(os.environ.get("INSTANCE_CONCURRENCY", "5")),
+        metavar="N",
+        help=(
+            "Number of chunks to process in parallel (default: 5, or "
+            "$INSTANCE_CONCURRENCY). Use 1 for fully sequential. Higher values "
+            "cut wall time but increase write contention and Anthropic rate-limit "
+            "pressure."
+        ),
+    )
 
     p_cost = subparsers.add_parser(
         "cost",
@@ -827,6 +902,7 @@ if __name__ == "__main__":
             resume=args.resume,
             verbose_summary=args.verbose_summary,
             model_id=args.model,
+            concurrency=args.concurrency,
         )
     elif args.command == "cost":
         run_cost(args.log_file)

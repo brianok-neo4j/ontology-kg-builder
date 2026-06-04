@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import json
 import os
+import random
+import time
 from typing import Any
 
 from neo4j import GraphDatabase, Driver
+from neo4j.exceptions import TransientError
 from strands import tool
 
 
@@ -37,6 +40,45 @@ def _run(query: str, params: dict | None = None) -> list[dict]:
     with _get_driver().session(database=db) as session:
         result = session.run(query, params or {})
         return [dict(r) for r in result]
+
+
+def _run_write(
+    query: str,
+    params: dict | None = None,
+    *,
+    max_attempts: int = 6,
+    base_delay: float = 0.5,
+    max_delay: float = 20.0,
+) -> list[dict]:
+    """Execute a write query, retrying transient failures with exponential backoff.
+
+    When instance chunks are processed concurrently, two workers frequently
+    `MERGE` overlapping entity names (e.g. both mention "Licensee") or touch
+    the same nodes when creating relationships. Neo4j resolves most of this by
+    making one transaction wait, but under contention it aborts one with a
+    `TransientError` — typically `Neo.TransientError.Transaction.DeadlockDetected`
+    or a lock-acquisition timeout. Because every write the agents issue is an
+    idempotent `MERGE`, simply retrying is safe.
+
+    Backoff is exponential with full jitter so colliding workers de-synchronise
+    instead of retrying in lockstep. `TransientError` covers deadlocks and lock
+    timeouts; non-transient errors (syntax, constraint logic) raise immediately.
+    """
+    db = os.environ.get("NEO4J_DATABASE")
+    last_exc: TransientError | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with _get_driver().session(database=db) as session:
+                result = session.run(query, params or {})
+                return [dict(r) for r in result]
+        except TransientError as exc:
+            last_exc = exc
+            if attempt == max_attempts:
+                break
+            delay = min(max_delay, base_delay * 2 ** (attempt - 1))
+            time.sleep(delay * (0.5 + random.random()))  # full jitter
+    assert last_exc is not None
+    raise last_exc
 
 
 @tool
@@ -113,6 +155,53 @@ def find_entities_by_name(name: str) -> str:
         {"name": name},
     )
     return json.dumps(rows)
+
+
+@tool
+def write_cypher(query: str, params_json: str = "{}") -> str:
+    """Execute a write Cypher statement (MERGE/CREATE/SET/MATCH...) and return rows as JSON.
+
+    Transient failures (deadlocks, lock timeouts under concurrent writes) are
+    retried automatically with exponential backoff — you do NOT need to retry
+    writes yourself. Pass entity names and the chunk elementId as parameters via
+    `params_json` rather than interpolating them into the query string.
+
+    Args:
+        query:       Parameterized Cypher write statement.
+        params_json: JSON object of parameter values for the query.
+
+    Returns:
+        JSON list of returned rows (often empty for pure MERGE writes), or a
+        string beginning with 'ERROR:' if the write ultimately failed (e.g. a
+        Cypher syntax error) so you can correct and retry.
+    """
+    params = json.loads(params_json) if params_json else {}
+    try:
+        rows = _run_write(query, params)
+    except Exception as exc:  # noqa: BLE001 — surface to the agent, don't crash the run
+        return f"ERROR: {type(exc).__name__}: {exc}"
+    return json.dumps(rows, default=str)
+
+
+@tool
+def read_cypher(query: str, params_json: str = "{}") -> str:
+    """Execute a read-only Cypher query and return rows as JSON (max 100 rows).
+
+    For targeted verification reads only — the ontology schema is already in
+    your system prompt, so do not use this to re-list EntityType / RelType.
+
+    Args:
+        query:       Parameterized read-only Cypher.
+        params_json: JSON object of parameter values for the query.
+
+    Returns:
+        JSON list of result rows (truncated to the first 100).
+    """
+    params = json.loads(params_json) if params_json else {}
+    rows = _run(query, params)
+    if len(rows) > 100:
+        rows = rows[:100] + [{"_warning": f"result truncated; {len(rows)} total rows"}]
+    return json.dumps(rows, default=str)
 
 
 @tool

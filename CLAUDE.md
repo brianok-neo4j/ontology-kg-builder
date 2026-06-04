@@ -23,6 +23,7 @@ Credentials go in `.env` at the repo root (see `.env.example`). Both `ingest/mai
 python ingest/main.py ontology path/to/document.pdf
 python ingest/main.py enhance
 python ingest/main.py instance path/to/document.pdf
+python ingest/main.py instance path/to/document.pdf --concurrency 8   # parallel chunks (default 5)
 
 # Add documents to an existing graph (skip ontology/enhance)
 python ingest/main.py instance path/to/extra_document.html
@@ -84,9 +85,9 @@ The layers never reference each other directly. Ontology nodes carry the `Entity
 
 **Agent 2 (enhancer):** Single-shot run over the full schema. Deduplicates equivalent EntityTypes, consolidates overly granular types, adds `SUBCLASS_OF` hierarchies, generalises jurisdiction-specific labels. Uses `SlidingWindowConversationManager(window_size=8)`.
 
-**Agent 3 (instance):** Single agent built once; schema embedded in cached system prompt for the whole run. Writes instance nodes via `MERGE` on `name` — idempotent. Adds `detail` property on relationships to capture specifics. At most 2 `write-cypher` calls per chunk.
+**Agent 3 (instance):** Chunks are processed **concurrently** (a thread pool, `--concurrency`/`$INSTANCE_CONCURRENCY`, default 5) since they are independent and every write is an idempotent `MERGE` on `name`. Each worker builds its own agent and resets its conversation per chunk; all workers share one identical cached schema prefix (written once, read by the rest) and the process-wide Neo4j driver. Unlike the ontology/enhancer agents, the instance agent writes through a **direct-driver `write_cypher` tool** (not the MCP server) so that deadlocks/transient lock errors from concurrent writes are retried with exponential backoff inside `shared/neo4j_tools._run_write`. Before the run, `_ensure_instance_name_indexes()` creates a uniqueness constraint on `name` for every instance label so each `MERGE` is an index seek, not a label scan. At most 2 `write_cypher` calls per chunk. `--resume` is set-based (skips the set of completed `chunk_num`s) because parallel workers finish out of order.
 
-All three agents use `claude-sonnet-4-6` and `SlidingWindowConversationManager(window_size=6, should_truncate_results=True)` (enhancer uses window_size=8).
+All agents use `claude-sonnet-4-6`. The ontology/enhancer/instance-worker agents use `SlidingWindowConversationManager(window_size=6, should_truncate_results=True)` (enhancer uses window_size=8); the instance agent additionally resets its conversation each chunk.
 
 ### Query agent detail
 
@@ -106,7 +107,7 @@ No fixed token/character chunk size — chunks are semantic sections as the docu
 
 ### MCPClient lifecycle
 
-The `MCPClient` must **not** be started via `with` before passing to the Agent — the Agent manages its lifecycle. Pass the `MCPClient` object directly in `tools=[..., mcp_client]`.
+Applies to the ontology and enhancer agents, which still use `mcp-neo4j-cypher`. (The instance agent no longer uses MCP — it writes via the direct-driver `write_cypher` tool so it can run in concurrent threads and retry deadlocks.) The `MCPClient` must **not** be started via `with` before passing to the Agent — the Agent manages its lifecycle. Pass the `MCPClient` object directly in `tools=[..., mcp_client]`.
 
 ### Prompt caching (strands gotcha)
 

@@ -22,14 +22,11 @@ overrides the plain-string version.
 from __future__ import annotations
 
 import json
-import os
 
-from mcp import StdioServerParameters, stdio_client
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
-from strands.tools.mcp import MCPClient
 
-from shared.neo4j_tools import _run
+from shared.neo4j_tools import _run, read_cypher, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 
 
@@ -74,7 +71,7 @@ At the start of each chunk you will be given:
 3. Every entity you create MUST be connected to the provided Chunk node via a
    FROM_CHUNK relationship.
 
-4. **Use at most two `write_neo4j_cypher` calls per chunk: one for entity
+4. **Use at most two `write_cypher` calls per chunk: one for entity
    nodes, one for relationships.** In the second call, use MATCH to re-fetch
    the nodes — do not chain node MERGEs and relationship MERGEs in a single
    query, as variable scoping errors are common. Example:
@@ -107,9 +104,13 @@ At the start of each chunk you will be given:
 7. Do not create any nodes or edges that reference the ontology layer
    (EntityType, RelType). The instance graph is fully separate.
 
-8. Do not call `get_neo4j_schema` or `read_neo4j_cypher` to inspect EntityType
-   / RelType — the cached snapshot above is authoritative. Targeted reads for
-   debugging a write are fine but discouraged.
+8. Do not call `read_cypher` to inspect EntityType / RelType — the cached
+   snapshot above is authoritative. Targeted reads for debugging a write are
+   fine but discouraged.
+
+   Writes go through `write_cypher`; deadlocks and transient lock errors are
+   retried for you automatically, so never re-issue a write just because it was
+   slow — only retry if `write_cypher` returns a string beginning with 'ERROR:'.
 
 9. **After the write-cypher tool executes successfully, stop immediately.** Do
    not produce any closing text, confirmation, or summary. Silence after the
@@ -146,38 +147,30 @@ def _fetch_ontology_schema_json() -> str:
     )
 
 
-def build_mcp_client() -> MCPClient:
-    return MCPClient(
-        lambda: stdio_client(
-            StdioServerParameters(
-                command="mcp-neo4j-cypher",
-                args=[],
-                env={
-                    **os.environ,
-                    "NEO4J_URI": os.environ["NEO4J_URI"],
-                    "NEO4J_USERNAME": os.environ["NEO4J_USERNAME"],
-                    "NEO4J_PASSWORD": os.environ["NEO4J_PASSWORD"],
-                    "NEO4J_SCHEMA_SAMPLE_SIZE": os.environ.get("NEO4J_SCHEMA_SAMPLE_SIZE", "1000"),
-                },
-            )
-        ),
-    )
-
-
 def build_agent(
-    mcp_client: MCPClient,
     verbose_summary: bool = False,
     model_id: str | None = None,
+    schema_json: str | None = None,
 ) -> Agent:
     """Build the instance agent with the current ontology schema in a cached prefix.
+
+    Writes go through the direct-driver `write_cypher` tool (with transient-error
+    retry) rather than the neo4j MCP server, so the agent is safe to run in many
+    concurrent threads — each thread builds its own agent and they share only the
+    process-wide Neo4j driver. See `run_instance` in `ingest/main.py`.
 
     Args:
         verbose_summary: If True, appends an instruction asking the agent to
                          summarise each chunk. Adds a second cycle per chunk —
                          disable for speed (default off).
         model_id:        Anthropic model to use. Defaults to MODULE-level MODEL_ID.
+        schema_json:     Pre-fetched ontology schema JSON. Fetched from Neo4j if
+                         None. Pass it in when building many agents (one per
+                         worker) to avoid re-reading the schema per worker and to
+                         guarantee an identical cached prefix across workers.
     """
-    schema_json = _fetch_ontology_schema_json()
+    if schema_json is None:
+        schema_json = _fetch_ontology_schema_json()
 
     effective_model = model_id or MODEL_ID
     prompt = BASE_SYSTEM_PROMPT
@@ -204,11 +197,11 @@ def build_agent(
             params={"system": system_blocks},
         ),
         system_prompt=prompt,
-        # MCP client only — gives the agent write_neo4j_cypher (for batched
-        # MERGEs) and read_neo4j_cypher (for targeted verification). The
+        # Direct-driver tools only: write_cypher (batched MERGEs, with
+        # transient-error retry) and read_cypher (targeted verification). The
         # high-level create_or_merge_node / create_relationship helpers are
-        # removed so the agent can't fall back to one-MERGE-per-call.
-        tools=[mcp_client],
+        # deliberately omitted so the agent can't fall back to one-MERGE-per-call.
+        tools=[write_cypher, read_cypher],
         conversation_manager=SlidingWindowConversationManager(
             window_size=6,
             should_truncate_results=True,
