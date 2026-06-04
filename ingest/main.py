@@ -541,6 +541,12 @@ def run_ontology(
             print(f"\n--- {Path(doc).name} ({doc_chunk_count} chunks) ---")
 
         print(f"  chunk {chunk_num}/{total}...", end=" ", flush=True)
+        # Each chunk is independent: the persistent state is the ontology graph
+        # (embedded in the cached system prompt), not the prior conversation.
+        # Reset history so we don't re-send the previous chunk's text and tool
+        # results as input every chunk (Finding D). The cached system prefix is
+        # untouched, so prompt-cache reads still hit.
+        agent.messages = []
         _invoke_with_recovery(
             agent,
             (
@@ -729,8 +735,9 @@ def run_instance(
         chunk_num = gi + 1
         chunk_id = chunk_ids[(doc, idx)]
         agent = _worker_agent()
-        # Independent chunk: start from a clean conversation. The cached system
-        # prefix (schema) is unchanged, so the prompt cache still hits.
+        # Independent chunk: start from a clean conversation (Finding D) so we
+        # don't carry the previous chunk's text/tool results as input. The
+        # cached system prefix (schema) is unchanged, so the prompt cache hits.
         agent.messages = []
         _invoke_with_recovery(
             agent,
