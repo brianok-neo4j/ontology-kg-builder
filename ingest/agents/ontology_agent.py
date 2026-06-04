@@ -94,7 +94,11 @@ re-list EntityType / RelType.)
 2. Identify the types of relationships between entities. For each, MERGE a
    `RelType` edge between the relevant `EntityType` nodes on `relLabel` and SET
    its `description`. Create relationships in one direction only. Omit inverses
-   unless they convey genuinely distinct semantic meaning.
+   unless they convey genuinely distinct semantic meaning. As with EntityType
+   descriptions: if a RelType edge already exists in the snapshot with an
+   accurate description, **leave it alone — do not MERGE it again.** Only re-SET
+   a RelType description for a substantive change (new distinguishing detail or
+   a corrected inaccuracy), never to reword wording that is already accurate.
 
 3. `Document` and `Chunk` EntityType nodes already exist with a `HAS_CHUNK`
    RelType edge — and they already have descriptions. Do not recreate them or
@@ -240,12 +244,14 @@ Apply the same generalization discipline as entity labels.
   `description`. Descriptions should be specific enough that another agent
   reading only the schema can tell two similar types apart.
 
-- **Do not rewrite descriptions for cosmetic reasons.** Only write a type whose
-  label is new, or whose description needs *substantive* change (new
-  distinguishing detail or a corrected inaccuracy). Re-stating an existing type
-  with an equivalent, reworded description is wasted work — skip it entirely.
-  When the snapshot already covers a type accurately, emit no MERGE for it.
-  Prefer writing only the handful of types this chunk genuinely adds or changes.
+- **Do not rewrite descriptions for cosmetic reasons.** This applies to BOTH
+  `EntityType` nodes and `RelType` edges. Only write an EntityType or RelType
+  whose label/pair is new, or whose description needs a *substantive* change
+  (new distinguishing detail or a corrected inaccuracy). Re-stating an existing
+  type or relationship with an equivalent, reworded description is wasted work —
+  skip it entirely. When the snapshot already covers a type or relationship
+  accurately, emit no MERGE for it. Prefer writing only the handful of types and
+  relationships this chunk genuinely adds or changes.
 
 - **After the write-cypher tool executes successfully, stop immediately.** Do
   not produce any closing text, confirmation, or summary — the tool result is
