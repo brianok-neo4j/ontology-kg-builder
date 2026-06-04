@@ -113,6 +113,14 @@ Applies to the ontology and enhancer agents, which still use `mcp-neo4j-cypher`.
 
 `Agent(system_prompt=[SystemContentBlock(...)])` is silently a no-op for caching in Strands. Route cache-controlled system blocks through `AnthropicModel(params={"system": [...]})` instead — `params` is spread after the string `system` field in `format_request` and overrides it. See `shared/strands_anthropic.py` for the cache token count fix.
 
+This caching path fails **silently** (no error, just full-price input) if Strands' internals change. Guard it with the cache-health smoke test, which makes two tiny API calls and asserts the prefix is written then re-read:
+
+```bash
+python -m shared.cache_check   # exit 0 = caching works (or no API key), 1 = silent regression
+```
+
+Run it after upgrading `strands`/`anthropic`, or wire it into CI.
+
 ## Domain vocabularies
 
 The ontology agent can be seeded with preferred EntityTypes via `--domain`:
