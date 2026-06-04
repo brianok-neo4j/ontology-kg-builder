@@ -118,7 +118,13 @@ def _fetch_ontology_schema_json() -> str:
     )
 
 
-def build_agent() -> Agent:
+def build_agent(model_id: str | None = None) -> Agent:
+    """Build the query agent.
+
+    Args:
+        model_id: Anthropic model to use. Defaults to module-level MODEL_ID.
+                  Parameterised so the A/B harness (eval/) can compare models.
+    """
     schema_json = _fetch_ontology_schema_json()
     system_blocks = [
         {"type": "text", "text": BASE_SYSTEM_PROMPT},
@@ -133,7 +139,7 @@ def build_agent() -> Agent:
     ]
     return Agent(
         model=AnthropicModel(
-            model_id=MODEL_ID,
+            model_id=model_id or MODEL_ID,
             max_tokens=MODEL_MAX_TOKENS,
             params={"system": system_blocks},
         ),
