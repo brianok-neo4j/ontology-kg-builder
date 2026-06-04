@@ -331,6 +331,46 @@ def _bootstrap_ontology_base(vocab: DomainVocabulary | None = None) -> None:
             )
 
 
+def _ensure_instance_name_indexes() -> None:
+    """Create a backing index on `name` for every instance EntityType label.
+
+    Without this, each `MERGE (n:Label {name: ...})` the instance agent runs is
+    a full label scan — e.g. a single MERGE against the 1,600-node Obligation
+    label profiles at ~3,300 dbHits, and the cost grows as the label fills, so
+    the instance stage is O(n^2) in entities per label (see
+    analysis/performance_analysis.md, Finding F).
+
+    A uniqueness constraint on (label, `name`) turns each MERGE into an index
+    seek and enforces the MERGE-on-name idempotency contract the agents already
+    rely on; it also creates the backing index. Document and Chunk are skipped:
+    they are pre-created provenance nodes and Chunk has no `name`.
+
+    Idempotent (every statement uses IF NOT EXISTS), so it is safe to run on
+    every instance invocation including resumes. If a label already contains
+    duplicate names (so a uniqueness constraint cannot be created), it falls
+    back to a plain range index, which still gives MERGE an index seek.
+    """
+    labels = [
+        r["entityLabel"]
+        for r in _run("MATCH (e:EntityType) RETURN e.entityLabel AS entityLabel")
+        if r["entityLabel"] not in ("Document", "Chunk")
+    ]
+    print(f"\n=== Ensuring name indexes for {len(labels)} instance labels ===")
+    for label in labels:
+        safe = label.replace("`", "")
+        try:
+            _run(
+                f"CREATE CONSTRAINT `{safe}_name` IF NOT EXISTS "
+                f"FOR (n:`{safe}`) REQUIRE n.name IS UNIQUE"
+            )
+        except Exception as exc:  # noqa: BLE001 — existing dup names block uniqueness
+            print(f"  ! {label}: uniqueness constraint failed ({exc}); using plain index")
+            _run(
+                f"CREATE INDEX `{safe}_name_idx` IF NOT EXISTS "
+                f"FOR (n:`{safe}`) ON (n.name)"
+            )
+
+
 def _resolve_domain(domain_flag: str, chunks: list) -> DomainVocabulary | None:
     """Return the DomainVocabulary to use for this run.
 
@@ -623,6 +663,8 @@ def run_instance(
             doc_ids[doc] = create_document_node(Path(doc).name, doc)
             print(f"  Document: {Path(doc).name}")
         chunk_ids[(doc, idx)] = create_chunk_node(doc_ids[doc], idx, chunk)
+
+    _ensure_instance_name_indexes()
 
     print("\n=== Populating instance data ===")
     if n_done:
