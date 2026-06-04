@@ -19,8 +19,10 @@ Three subcommands run in sequence, sharing Neo4j as their only state:
 
 **Agent 1 — Ontology** (`ingest/agents/ontology_agent.py`)
 Reads document chunks and writes a schema-level ontology to Neo4j using
-`EntityType` nodes and `RelType` edges. Fresh agent per chunk with the current
-schema embedded in a cached system prompt.
+`EntityType` nodes and `RelType` edges. The current schema is embedded in a
+system prompt; the agent is rebuilt only when the schema *structure* changes
+(a new `EntityType` or `RelType`, not a reworded description), its conversation
+is reset each chunk, and the schema prefix is prompt-cached once it stabilises.
 
 **Agent 2 — Enhancer** (`ingest/agents/enhancer_agent.py`)
 Runs once after Agent 1. Reviews the full schema and makes targeted quality
@@ -31,7 +33,11 @@ types, introduces `SUBCLASS_OF` hierarchies, generalises jurisdiction-specific l
 Uses the enhanced ontology as a strict schema. Extracts instance nodes and
 relationships from each chunk, connecting every entity to its source `Chunk`
 via `FROM_CHUNK`. Only labels and relationship types defined in the ontology
-are used.
+are used. Chunks are processed concurrently (`--concurrency`, default 5) since
+they are independent and every write is an idempotent `MERGE`; writes use a
+direct Neo4j driver that retries deadlocks/transient errors with exponential
+backoff, and a uniqueness constraint on each label's `name` is created up front
+so each `MERGE` is an index seek rather than a full label scan.
 
 ### Query agent (`query/`)
 
@@ -76,7 +82,11 @@ python ingest/main.py ontology path/to/document.pdf --domain legal
 # Ingest additional documents into an existing graph (skips ontology/enhance)
 python ingest/main.py instance path/to/regulation.html
 
-# Resume an interrupted run
+# Process instance chunks in parallel (default 5; tune to your rate limits)
+python ingest/main.py instance path/to/document.pdf --concurrency 8
+
+# Resume an interrupted run (instance resume is set-based, so safe after a
+# parallel run where chunks completed out of order)
 python ingest/main.py ontology path/to/document.pdf --resume
 python ingest/main.py instance path/to/document.pdf --resume
 
@@ -130,6 +140,8 @@ new ones as `SUBCLASS_OF` a preferred type.
 | `NEO4J_SCHEMA_SAMPLE_SIZE` | Schema sample size for mcp-neo4j-cypher (default: 1000) |
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (slower) |
 | `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Chunks with no schema change before enabling prompt cache (default: 3) |
+| `INSTANCE_CONCURRENCY` | Default parallel workers for the instance stage (default: 5; overridden by `--concurrency`) |
+| `ANTHROPIC_CACHE_TTL` | Prompt-cache TTL for the schema prefix: `5m` or `1h`. Ingest defaults to `1h`, the query agent to `5m` |
 
 ## Graph model
 
