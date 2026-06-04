@@ -97,19 +97,43 @@ def run_cost(log_path: str) -> None:
         print(f"Model '{model_id}' not in pricing table ({known}). Add it to _PRICING.")
         return
 
-    total_input = total_cache_write = total_cache_read = total_output = 0
+    # Strands reports *cumulative* usage on every record. An agent that is reused
+    # for the whole run (instance / query / enhancer) therefore reports running
+    # totals — summing the per-record values triangular-counts them (off by up to
+    # ~100×). An agent that is rebuilt mid-run (ontology, rebuilt on schema change)
+    # resets its counters at each rebuild. Summing per-record *deltas*, treating a
+    # decrease as a reset, recovers the true total in both cases.
+    _USAGE_KEYS = {
+        "inputTokens": "total_input",
+        "outputTokens": "total_output",
+        "cacheWriteInputTokens": "total_cache_write",
+        "cacheReadInputTokens": "total_cache_read",
+    }
+    totals = {v: 0 for v in _USAGE_KEYS.values()}
+    prev = {k: 0 for k in _USAGE_KEYS}
     chunk_events = errors = 0
     for r in records:
-        u = (r.get("metrics") or {}).get("accumulated_usage", {})
-        total_input       += u.get("inputTokens", 0)
-        total_cache_write += u.get("cacheWriteInputTokens", 0)
-        total_cache_read  += u.get("cacheReadInputTokens", 0)
-        total_output      += u.get("outputTokens", 0)
         ev = r.get("event", "")
         if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
             chunk_events += 1
         if "_error" in ev:
             errors += 1
+        u = (r.get("metrics") or {}).get("accumulated_usage") or {}
+        if not u:
+            # run_start / run_resume / error records carry no usage — skip them
+            # so they don't reset the delta tracking and double-count the next record.
+            continue
+        for key, tot_key in _USAGE_KEYS.items():
+            cur = u.get(key, 0)
+            # Monotonic increase → delta; decrease → agent was rebuilt, count the
+            # full current value as this run-segment's fresh total.
+            totals[tot_key] += cur - prev[key] if cur >= prev[key] else cur
+            prev[key] = cur
+
+    total_input       = totals["total_input"]
+    total_cache_write = totals["total_cache_write"]
+    total_cache_read  = totals["total_cache_read"]
+    total_output      = totals["total_output"]
 
     cost = (
         total_input       / 1e6 * pricing["input"]       +
