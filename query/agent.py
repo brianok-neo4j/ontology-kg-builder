@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 
 from strands import Agent
+from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -138,4 +139,15 @@ def build_agent() -> Agent:
         ),
         system_prompt=BASE_SYSTEM_PROMPT,
         tools=[find_entities_by_name, run_read_cypher, get_ontology_schema],
+        # Bound the conversation so a long REPL session doesn't grow unboundedly
+        # (each question would otherwise re-send the whole prior session as
+        # input every cycle). window_size=40 is well above the worst observed
+        # single question (~13 cycles ≈ 27 messages), so it never truncates a
+        # multi-hop question mid-flight, while still capping cross-question
+        # growth and preserving recent context for follow-ups. should_truncate_
+        # results trims oversized tool results before dropping messages.
+        conversation_manager=SlidingWindowConversationManager(
+            window_size=40,
+            should_truncate_results=True,
+        ),
     )

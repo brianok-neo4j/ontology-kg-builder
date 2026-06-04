@@ -48,6 +48,9 @@ def _compute_cost(usage: dict, model_id: str) -> float:
     )
 
 
+_USAGE_KEYS = ("inputTokens", "cacheWriteInputTokens", "cacheReadInputTokens", "outputTokens")
+
+
 def _ask(agent, question: str, log_file: Path, question_num: int, run_id: str) -> None:
     print(f"\n> {question}\n")
     t0 = datetime.now(timezone.utc)
@@ -56,14 +59,29 @@ def _ask(agent, question: str, log_file: Path, question_num: int, run_id: str) -
 
     metrics = result.metrics if result and result.metrics else None
     summary = metrics.get_summary() if metrics else {}
-    usage = summary.get("accumulated_usage", {})
-    tool_usage = summary.get("tool_usage", {})
-    cycles = summary.get("total_cycles", 0)
+    cum_usage = summary.get("accumulated_usage", {})
+    cum_cycles = summary.get("total_cycles", 0)
+    all_traces = [t.to_dict() for t in (metrics.traces if metrics else [])]
+
+    # The agent is reused across REPL questions, so accumulated_usage / cycles /
+    # traces are cumulative. Diff against the previous question (the agent is
+    # never rebuilt, so the totals only grow) to report and log *per-question*
+    # figures — otherwise the token line shows running totals and _print_cost
+    # triangular-counts the sum.
+    prev_usage = getattr(agent, "_prev_usage", {})
+    usage = {k: cum_usage.get(k, 0) - prev_usage.get(k, 0) for k in _USAGE_KEYS}
+    cycles = cum_cycles - getattr(agent, "_prev_cycles", 0)
+    traces = all_traces[getattr(agent, "_prev_trace_n", 0):]  # only this question's traces
+
+    agent._prev_usage = {k: cum_usage.get(k, 0) for k in _USAGE_KEYS}
+    agent._prev_cycles = cum_cycles
+    agent._prev_trace_n = len(all_traces)
 
     cost = _compute_cost(usage, MODEL_ID)
+    tool_usage = summary.get("tool_usage", {})
 
-    # Compact token line
-    if usage:
+    # Compact token line (per-question)
+    if any(usage.values()):
         print(
             f"\n[{duration:.1f}s | {cycles} cycles | "
             f"in={usage.get('inputTokens', 0):,} "
@@ -71,10 +89,6 @@ def _ask(agent, question: str, log_file: Path, question_num: int, run_id: str) -
             f"out={usage.get('outputTokens', 0):,} | "
             f"${cost:.4f}]"
         )
-
-    # Full trace tree: each Trace includes name, timing, message (tool calls + text),
-    # and children (nested tool-result traces).
-    traces = [t.to_dict() for t in (metrics.traces if metrics else [])]
 
     _write_log(log_file, {
         "ts": _now(),
@@ -86,7 +100,7 @@ def _ask(agent, question: str, log_file: Path, question_num: int, run_id: str) -
         "metrics": {
             "total_cycles": cycles,
             "total_duration": duration,
-            "accumulated_usage": usage,
+            "usage": usage,
             "tool_usage": {
                 name: {
                     "call_count": info.get("execution_stats", {}).get("call_count", 0),
@@ -113,7 +127,10 @@ def _print_cost(log_path: str) -> None:
 
     total_input = total_cw = total_cr = total_out = 0
     for q in questions:
-        u = q.get("metrics", {}).get("accumulated_usage", {})
+        m = q.get("metrics", {})
+        # New logs store a per-question `usage` delta; older logs stored the
+        # cumulative `accumulated_usage`. Per-question values sum correctly.
+        u = m.get("usage") or m.get("accumulated_usage", {})
         total_input += u.get("inputTokens", 0)
         total_cw    += u.get("cacheWriteInputTokens", 0)
         total_cr    += u.get("cacheReadInputTokens", 0)
