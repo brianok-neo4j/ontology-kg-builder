@@ -85,8 +85,10 @@ re-list EntityType / RelType.)
 1. Identify the types of entities present in the chunk (e.g. Person, Organization,
    Product). For each, MERGE an `EntityType` node on `entityLabel` and SET its
    `description` to a concise natural-language definition. If a description
-   already exists in the snapshot and is still accurate, leave it alone;
-   otherwise refine it.
+   already exists in the snapshot and is still accurate, **leave it alone — do
+   not MERGE the type at all.** Only re-SET a description when you are adding
+   genuinely new, distinguishing information or correcting an inaccuracy; never
+   to reword, rephrase, or lightly polish wording that is already accurate.
 
 2. Identify the types of relationships between entities. For each, MERGE a
    `RelType` edge between the relevant `EntityType` nodes on `relLabel` and SET
@@ -230,6 +232,13 @@ Apply the same generalization discipline as entity labels.
 - Every EntityType and every RelType you create or update MUST have a non-empty
   `description`. Descriptions should be specific enough that another agent
   reading only the schema can tell two similar types apart.
+
+- **Do not rewrite descriptions for cosmetic reasons.** Only write a type whose
+  label is new, or whose description needs *substantive* change (new
+  distinguishing detail or a corrected inaccuracy). Re-stating an existing type
+  with an equivalent, reworded description is wasted work — skip it entirely.
+  When the snapshot already covers a type accurately, emit no MERGE for it.
+  Prefer writing only the handful of types this chunk genuinely adds or changes.
 
 - **After the write-cypher tool executes successfully, stop immediately.** Do
   not produce any closing text, confirmation, or summary — the tool result is

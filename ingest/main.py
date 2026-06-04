@@ -375,6 +375,26 @@ def _open_log(command: str, **params) -> Path:
     return log_file
 
 
+def _ontology_structure_sig(snapshot: dict) -> tuple[frozenset, frozenset]:
+    """Structural fingerprint of an ontology snapshot, ignoring description text.
+
+    Two snapshots are structurally identical if they have the same set of
+    EntityType labels and the same set of (from, relLabel, to) RelType edges,
+    even if their `description` strings differ. Used to decide when to rebuild
+    the ontology agent: a rebuild resets the prompt cache, so description-only
+    refinements must not trigger one (see analysis/performance_analysis.md,
+    Finding B).
+    """
+    labels = frozenset(
+        e.get("entityLabel") for e in snapshot.get("entity_types", [])
+    )
+    edges = frozenset(
+        (r.get("from_entityLabel"), r.get("relLabel"), r.get("to_entityLabel"))
+        for r in snapshot.get("relationships", [])
+    )
+    return labels, edges
+
+
 def run_ontology(
     path: str,
     limit: int | None = None,
@@ -453,6 +473,7 @@ def run_ontology(
         )
 
     current_snapshot = fetch_ontology_snapshot()
+    current_sig = _ontology_structure_sig(current_snapshot)
     agent = _build_agent(current_snapshot)
 
     current_doc: str | None = None
@@ -483,17 +504,30 @@ def run_ontology(
             total_chunks=total,
         )
 
+        # Rebuild the agent only when the schema *structure* changes (a new
+        # EntityType label or a new (from, relLabel, to) edge) — NOT when the
+        # agent merely refines a description. A rebuild re-embeds the snapshot
+        # and resets the prompt cache, so rebuilding on every description tweak
+        # kept the cache from ever engaging (see analysis/performance_analysis.md,
+        # Finding B). Description-only changes leave the structure stable, so the
+        # streak keeps counting toward cache activation.
         new_snapshot = fetch_ontology_snapshot()
-        if new_snapshot != current_snapshot:
+        new_sig = _ontology_structure_sig(new_snapshot)
+        if new_sig != current_sig:
+            current_sig = new_sig
             current_snapshot = new_snapshot
             no_change_streak = 0
             use_cache = False
             agent = _build_agent(current_snapshot)
-            print("done (+rebuilt)")
+            print("done (+rebuilt: structure changed)")
         else:
             no_change_streak += 1
             if no_change_streak == stability_threshold and not use_cache:
                 use_cache = True
+                # Refresh to the latest descriptions for the now-cached build;
+                # the structure is unchanged so this is the last rebuild until
+                # a genuine structural change occurs.
+                current_snapshot = new_snapshot
                 agent = _build_agent(current_snapshot)
                 print(f"done (cache enabled, streak={no_change_streak})")
             else:
