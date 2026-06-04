@@ -4,10 +4,10 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Setup
 
-Python 3.14 is required (Homebrew: `/opt/homebrew/opt/python@3.14/bin/python3.14`). Always create the venv with the explicit path to avoid version mismatches:
+Python 3.11+ is required (matches `requires-python` in `pyproject.toml`; no dependency or code feature needs anything newer). 3.14 is what the pilot was developed and tested on and is recommended. Create the venv with an explicit interpreter path to avoid version mismatches, e.g. with Homebrew's 3.14:
 
 ```bash
-/opt/homebrew/opt/python@3.14/bin/python3.14 -m venv .venv
+/opt/homebrew/opt/python@3.14/bin/python3.14 -m venv .venv   # or any python3.11+
 source .venv/bin/activate
 pip install -e .
 pip install mcp-neo4j-cypher --no-deps   # avoid mcp version downgrade
