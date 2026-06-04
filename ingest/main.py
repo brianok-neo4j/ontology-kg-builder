@@ -634,7 +634,10 @@ def run_ontology(
                 "---\n"
                 "Identify the entity types and relationship types present in this chunk "
                 "and update the ontology schema accordingly. Do not create instance data. "
-                "Use at most two write-cypher calls: one for EntityType nodes, one for RelType edges."
+                "Keep node writes and edge writes in separate calls, but make only the "
+                "calls you need (one for new EntityType nodes, one for RelType edges) — "
+                "skip the node call entirely if no new types are needed, and make no "
+                "calls if the chunk adds nothing. Never write a placeholder/no-op query."
             ),
             log_file,
             "ontology_chunk",
@@ -826,8 +829,9 @@ def run_instance(
                 "---\n"
                 "Using the ontology schema provided in your system prompt, extract "
                 "instance entities and relationships from this chunk. Connect every entity "
-                "to the Chunk node via FROM_CHUNK. "
-                "Batch all of this chunk's MERGEs into a single write_cypher call."
+                "to the Chunk node via FROM_CHUNK. Keep node writes and edge writes in "
+                "separate write_cypher calls (nodes first, then relationships), but make "
+                "only the calls you need — never a placeholder/no-op query."
             ),
             log_file,
             "instance_chunk",

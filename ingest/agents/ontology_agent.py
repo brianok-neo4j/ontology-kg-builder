@@ -196,12 +196,22 @@ Apply the same generalization discipline as entity labels.
   ```
   Never: `MERGE (e:EntityType {entityLabel: 'Foo', description: '...'})`
 
-- **Use at most two write-cypher calls per chunk: one for EntityType nodes,
-  one for RelType edges.** In the second call, use MATCH (not MERGE) to
-  re-fetch the nodes before creating edges. This avoids variable-scoping
-  errors in long multi-MERGE queries. Example:
+- **Never create EntityType nodes and RelType edges in the same query.** Mixing
+  node MERGEs and edge MERGEs in one statement causes variable-scoping errors
+  and stray "ghost" nodes. Keep node writes and edge writes in separate calls.
 
-  Call 1 — all EntityType nodes:
+- **Make only the calls you actually need — at most two, often fewer:**
+  - New/updated node types AND new edges → **two calls**: nodes first, then edges.
+  - Only new edges (every node type this chunk needs already exists in the
+    snapshot) → **one call**: `MATCH` the existing nodes, then `MERGE` the edges.
+  - Only new node types (no new edges) → **one call**.
+  - Nothing new in this chunk → **no write-cypher calls at all**; just stop.
+
+  **Do NOT issue a placeholder / no-op query (e.g. `MATCH ... RETURN n LIMIT 1`)
+  to "satisfy" a two-call pattern.** If there are no new nodes, skip the node
+  call entirely and make only the edge call.
+
+  Node call (only when there are new/changed node types):
   ```
   MERGE (a:EntityType {entityLabel: 'Company'})
     SET a.description = "A business entity ..."
@@ -209,7 +219,7 @@ Apply the same generalization discipline as entity labels.
     SET b.description = "A good or service ..."
   ```
 
-  Call 2 — all RelType edges (re-fetch nodes with MATCH):
+  Edge call (re-fetch nodes with MATCH — this may be the ONLY call):
   ```
   MATCH (a:EntityType {entityLabel: 'Company'})
   MATCH (b:EntityType {entityLabel: 'Product'})
@@ -219,10 +229,6 @@ Apply the same generalization discipline as entity labels.
   MERGE (a)-[r2:RelType {relLabel: 'FROM_CHUNK'}]->(c)
     SET r2.description = "links an instance entity back to the source Chunk"
   ```
-
-  Do not chain MERGE statements for nodes and edges in a single query — the
-  variable scoping rules make this error-prone. Two clean calls are better
-  than one broken one.
 
 - **Always use double-quoted strings for `description` values** (as shown
   above). Descriptions frequently contain apostrophes ("Residents' Council",

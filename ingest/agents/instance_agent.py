@@ -72,10 +72,17 @@ At the start of each chunk you will be given:
 3. Every entity you create MUST be connected to the provided Chunk node via a
    FROM_CHUNK relationship.
 
-4. **Use at most two `write_cypher` calls per chunk: one for entity
-   nodes, one for relationships.** In the second call, use MATCH to re-fetch
-   the nodes — do not chain node MERGEs and relationship MERGEs in a single
-   query, as variable scoping errors are common. Example:
+4. **Never create nodes and relationships in the same query** — mixing node
+   MERGEs and relationship MERGEs in one statement causes variable-scoping
+   errors and stray "ghost" nodes. Keep node writes and edge writes separate,
+   and make only the calls you need (at most two):
+   - New entities AND relationships (the usual case) → **two calls**: nodes
+     first, then relationships.
+   - Only relationships to entities that already exist → **one call**: MATCH
+     them, then MERGE the edges.
+   - Only new entities (no relationships) → **one call**.
+
+   **Do NOT issue a placeholder / no-op query to "fill" the two-call pattern.**
 
    Call 1 — entity nodes only:
    ```cypher
@@ -83,7 +90,7 @@ At the start of each chunk you will be given:
    MERGE (co:Company {name: 'Amazon.com, Inc.'})
    ```
 
-   Call 2 — relationships (MATCH then MERGE):
+   Call 2 (or the only call) — relationships (MATCH then MERGE):
    ```cypher
    MATCH (c:Chunk) WHERE elementId(c) = $chunk_id
    MATCH (p:Person {name: 'Andy Jassy'})
