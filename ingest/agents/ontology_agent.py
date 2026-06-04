@@ -44,6 +44,7 @@ from strands.tools.mcp import MCPClient
 
 from shared.neo4j_tools import _run
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 from ingest.domain_vocab import DomainVocabulary
 
 
@@ -355,7 +356,10 @@ def build_agent(
         "text": f"\n\n## Ontology snapshot\n\n```json\n{snapshot_json}\n```\n",
     }
     if use_cache:
-        snapshot_block["cache_control"] = {"type": "ephemeral"}
+        # 1h TTL: once the schema is structurally stable the snapshot prefix is
+        # re-read across many chunks; keep it warm so it isn't re-written each
+        # time a gap exceeds 5 minutes.
+        snapshot_block["cache_control"] = cache_control("1h")
     system_blocks.append(snapshot_block)
 
     return Agent(

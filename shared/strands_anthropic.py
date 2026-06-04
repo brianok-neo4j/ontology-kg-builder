@@ -17,10 +17,40 @@ Use everywhere we'd otherwise use `AnthropicModel`.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from strands.models.anthropic import AnthropicModel
 from strands.types.streaming import StreamEvent
+
+
+_VALID_TTL = {"5m", "1h"}
+
+
+def cache_control(default_ttl: str = "5m") -> dict[str, str]:
+    """Build a `cache_control` marker for a cached system block.
+
+    The TTL controls how long Anthropic keeps the cached prefix alive between
+    reads (each read refreshes the window):
+
+    - ``"5m"`` — cheaper write (1.25x input price) but the entry is evicted
+      after 5 idle minutes and the whole prefix is re-written on the next
+      request. Right for short / single-shot use (e.g. one CLI question).
+    - ``"1h"`` — pricier write (2x input price) but the ~38K-token schema
+      prefix is written once and survives slow chunks, rate-limit backoffs and
+      idle workers instead of being re-written whenever a gap exceeds 5 minutes.
+      Right for long ingest runs that re-read the prefix hundreds of times: one
+      extra-cost write replaces tens of full re-writes (see
+      analysis/performance_analysis.md, Finding E).
+
+    The TTL is overridable globally via the ``ANTHROPIC_CACHE_TTL`` env var
+    (``"5m"`` or ``"1h"``); an unrecognised value falls back to ``default_ttl``.
+    The ``ttl`` field is GA in the Anthropic SDK (no beta header required).
+    """
+    ttl = os.environ.get("ANTHROPIC_CACHE_TTL", default_ttl).strip().lower()
+    if ttl not in _VALID_TTL:
+        ttl = default_ttl
+    return {"type": "ephemeral", "ttl": ttl}
 
 
 class CacheAwareAnthropicModel(AnthropicModel):

@@ -28,6 +28,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 
 from shared.neo4j_tools import _run, read_cypher, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 
 
 MODEL_ID = "claude-sonnet-4-6"
@@ -187,7 +188,9 @@ def build_agent(
         {
             "type": "text",
             "text": f"\n\n## Ontology schema (cached)\n\n```json\n{schema_json}\n```\n",
-            "cache_control": {"type": "ephemeral"},
+            # Long run, schema re-read on every chunk → keep the prefix warm for
+            # an hour so it is written once rather than re-written on TTL expiry.
+            "cache_control": cache_control("1h"),
         },
     ]
     return Agent(

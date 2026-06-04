@@ -150,6 +150,8 @@ The agent system prompts enforce these — maintain them in any new tools or pro
 | `NEO4J_PASSWORD` | Neo4j password |
 | `NEO4J_DATABASE` | Named database (optional, defaults to server default) |
 | `NEO4J_SCHEMA_SAMPLE_SIZE` | Sample size for mcp-neo4j-cypher get-schema (default: `"1000"`) |
+| `ANTHROPIC_CACHE_TTL` | Prompt-cache TTL for the cached schema prefix: `5m` or `1h`. Ingest agents default to `1h` (prefix re-read across the whole run); the query agent defaults to `5m`. Set this to override globally. |
+| `INSTANCE_CONCURRENCY` | Default number of chunks the instance stage processes in parallel (default `5`; overridden by `--concurrency`). |
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (adds ~16s/chunk) |
 | `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Consecutive no-change chunks before enabling prompt cache (default: `3`) |
 

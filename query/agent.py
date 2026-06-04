@@ -26,6 +26,7 @@ import json
 
 from strands import Agent
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 
 from shared.neo4j_tools import _run, find_entities_by_name
 from ingest.tools import get_ontology_schema
@@ -123,7 +124,10 @@ def build_agent() -> Agent:
         {
             "type": "text",
             "text": f"\n\n## Ontology schema (cached)\n\n```json\n{schema_json}\n```\n",
-            "cache_control": {"type": "ephemeral"},
+            # 5m default: a single-shot CLI question exits before any reuse, so
+            # the cheaper short-TTL write is right. A long REPL session can opt
+            # into 1h via ANTHROPIC_CACHE_TTL=1h.
+            "cache_control": cache_control(),
         },
     ]
     return Agent(
