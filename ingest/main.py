@@ -63,6 +63,14 @@ _VERBOSE_SUMMARY_DEFAULT = os.environ.get("ONTOLOGY_VERBOSE_SUMMARY", "").lower(
     "1", "true", "yes"
 )
 
+# Whether to log per-call message traces (tool calls + text) on each chunk for
+# later analysis. ON by default; disable with --no-trace-logs or
+# INGEST_LOG_TRACES=0. Traces are logged PER CALL (sliced to just that chunk),
+# never the cumulative blob — see _per_call_metrics — so logs stay bounded.
+_LOG_TRACES = os.environ.get("INGEST_LOG_TRACES", "1").strip().lower() not in (
+    "0", "false", "no", "off"
+)
+
 # Per-million-token pricing. Verify against https://www.anthropic.com/pricing
 # before relying on cost estimates for budgeting.
 _PRICING: dict[str, dict[str, float]] = {
@@ -283,13 +291,30 @@ def _per_call_metrics(agent, result) -> dict:
     if dur < 0:
         dur = cum_dur
 
+    out = {"usage": usage, "cycles": cycles, "duration_s": round(dur, 3)}
+
+    # Per-call message traces (tool calls + text + timings), sliced to just THIS
+    # call. The agent's metrics.traces is cumulative, so we record only the new
+    # entries since the previous chunk — this keeps the message-level detail for
+    # analysis without re-logging the whole growing blob (which ballooned the
+    # instance log to 543 MB before Finding J).
+    trace_n = prev.get("trace_n", 0)
+    if _LOG_TRACES:
+        try:
+            all_traces = [t.to_dict() for t in (result.metrics.traces if result and result.metrics else [])]
+        except Exception:
+            all_traces = []
+        out["traces"] = all_traces[trace_n:]
+        trace_n = len(all_traces)
+
     # Update the baseline on the agent (single-threaded per agent, so safe).
     agent._prev_cum = {
         "usage": {k: (cum_usage.get(k, 0) or 0) for k in _USAGE_FIELDS},
         "cycles": cum_cycles,
         "dur": cum_dur,
+        "trace_n": trace_n,
     }
-    return {"usage": usage, "cycles": cycles, "duration_s": round(dur, 3)}
+    return out
 
 
 def _log(log_file: Path, event: str, fields: dict, **extra) -> None:
@@ -879,6 +904,13 @@ if __name__ == "__main__":
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {ONTOLOGY_MODEL_ID}).",
     )
+    p_ontology.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log per-call message traces (tool calls + text) for later analysis. "
+             "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
+    )
 
     p_enhance = subparsers.add_parser(
         "enhance",
@@ -889,6 +921,12 @@ if __name__ == "__main__":
         default=None,
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {ENHANCER_MODEL_ID}).",
+    )
+    p_enhance.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log message traces for later analysis. On by default; --no-trace-logs to disable.",
     )
 
     p_instance = subparsers.add_parser(
@@ -934,6 +972,13 @@ if __name__ == "__main__":
             "pressure."
         ),
     )
+    p_instance.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log per-call message traces (tool calls + text) for later analysis. "
+             "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
+    )
 
     p_cost = subparsers.add_parser(
         "cost",
@@ -942,6 +987,10 @@ if __name__ == "__main__":
     p_cost.add_argument("log_file", help="Path to a *_metrics.jsonl log file.")
 
     args = parser.parse_args()
+
+    # Apply the trace-logging toggle (ontology/enhance/instance carry the flag;
+    # cost does not). Read by _per_call_metrics via the module global.
+    _LOG_TRACES = getattr(args, "trace_logs", _LOG_TRACES)
 
     if args.command == "ontology":
         run_ontology(
