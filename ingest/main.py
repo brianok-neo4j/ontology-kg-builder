@@ -749,10 +749,11 @@ def run_enhance(model_id: str | None = None) -> None:
         agent,
         (
             "Review the ontology schema provided in your system prompt and make "
-            "any improvements: resolve duplicates, simplify overly granular types, "
-            "and introduce class hierarchies where appropriate. Use the EntityType "
-            "and RelType `description` fields — not just labels — to judge "
-            "equivalence and hierarchy candidates."
+            "any improvements. FIRST remove any ghost nodes (non-EntityType nodes "
+            "dangling off RelType edges). Then resolve duplicates, simplify overly "
+            "granular types, and introduce class hierarchies where appropriate. Use "
+            "the EntityType and RelType `description` fields — not just labels — to "
+            "judge equivalence and hierarchy candidates."
         ),
         log_file,
         "enhancer",

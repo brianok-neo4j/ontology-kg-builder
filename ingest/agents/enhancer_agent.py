@@ -125,6 +125,25 @@ surviving type so they capture the combined meaning.
 
 ## What to look for and how to fix it
 
+### 0. Ghost nodes (do this FIRST)
+A correct ontology has `RelType` edges only between two `:EntityType` nodes. A
+malformed write can leave a "ghost" node — a node with no label (or any
+non-`EntityType` node) dangling off a `RelType` edge. Before anything else,
+remove them, then verify none remain:
+
+```cypher
+MATCH (g)-[:RelType]-()
+WHERE NOT g:EntityType
+DETACH DELETE g
+```
+```cypher
+// verify: should return 0
+MATCH (g)-[:RelType]-() WHERE NOT g:EntityType RETURN count(g) AS ghosts
+```
+These are not real types — never try to merge, link, or describe them; just
+delete them. (Do not delete `:EntityType` nodes here — including `Document` and
+`Chunk`, which are legitimate EntityTypes.)
+
 ### 1. Duplicate or equivalent EntityTypes
 If two EntityType nodes clearly represent the same concept — judged primarily
 from their `description` fields, not just their labels (e.g. "CEO" and
