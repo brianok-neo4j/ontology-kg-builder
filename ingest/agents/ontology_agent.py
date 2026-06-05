@@ -42,7 +42,7 @@ from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.tools.mcp import MCPClient
 
-from shared.neo4j_tools import _run, describe_ontology
+from shared.neo4j_tools import _run, describe_ontology, snapshot_description_field
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 from ingest.domain_vocab import DomainVocabulary
@@ -78,11 +78,11 @@ The current state of the ontology is provided below in the section titled
 "Ontology snapshot". This snapshot is taken just before you process this
 chunk. You MUST treat it as the source of truth for what already exists.
 
-To keep it compact, the snapshot shows only each type's/relationship's
-`short_description`. If a short description isn't enough to decide whether a
-type already covers your concept (or to tell two similar types apart), call the
-`describe_ontology` tool with the label to get its `full_description` — do this
-BEFORE creating a near-duplicate type.
+To keep it compact, the snapshot shows each type's/relationship's brief
+`description`. If that isn't enough to decide whether a type already covers your
+concept (or to tell two similar types apart), call the `describe_ontology` tool
+with the label to get its `full_description` — do this BEFORE creating a
+near-duplicate type.
 
 DO NOT call `get-schema` or `read-cypher` to inspect EntityType / RelType
 nodes — the snapshot (plus `describe_ontology` for detail) already has
@@ -310,25 +310,28 @@ _SUMMARY_INSTRUCTION = (
 def _fetch_ontology_snapshot() -> dict:
     """Read the current EntityType / RelType graph state from Neo4j.
 
-    Embeds only `short_description` — this snapshot is re-sent in every chunk's
-    prompt, so the compact field keeps the per-chunk cost bounded. Full text is
-    available on demand via the `describe_ontology` tool.
+    Embeds the compact `short_description` by default (this snapshot is re-sent in
+    every chunk's prompt, so the short field keeps per-chunk cost bounded); set
+    `ONTOLOGY_COMPACT_SNAPSHOT=0` to embed `full_description` instead. Either way
+    the field is emitted under the uniform key `description`, and the full text is
+    always available via the `describe_ontology` tool.
     """
+    field = snapshot_description_field()
     entity_types = _run(
-        """
+        f"""
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.short_description AS short_description
+               e.{field} AS description
         ORDER BY e.entityLabel
         """
     )
     rels = _run(
-        """
+        f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.short_description AS short_description
+               r.{field} AS description
         ORDER BY a.entityLabel, r.relLabel, b.entityLabel
         """
     )

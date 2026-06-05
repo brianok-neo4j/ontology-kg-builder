@@ -29,7 +29,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
-from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name
+from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name, snapshot_description_field
 from ingest.tools import get_ontology_schema
 from query.tools import run_read_cypher
 
@@ -40,8 +40,8 @@ MODEL_MAX_TOKENS = 8192
 BASE_SYSTEM_PROMPT = """You are a graph question-answering agent. The graph is a
 Neo4j database with two layers:
 
-- Ontology layer: `EntityType` nodes (property `entityLabel`, `short_description`)
-  connected by `RelType` edges (property `relLabel`, `short_description`).
+- Ontology layer: `EntityType` nodes (property `entityLabel`, `description`)
+  connected by `RelType` edges (property `relLabel`, `description`).
 - Instance layer: nodes whose Neo4j label is the EntityType's `entityLabel`,
   always with a `name` property; connected to each other by edges whose type
   is a RelType `relLabel`; also connected to `Chunk` nodes via FROM_CHUNK
@@ -50,7 +50,7 @@ Neo4j database with two layers:
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
 read it directly from this prompt for every question. To stay compact it shows
-only each type's/relationship's `short_description`; when you need the full
+each type's/relationship's brief `description`; when you need the full
 definition to choose between similar labels (e.g. `GOVERNS` vs `RESTRICTS` vs
 `CONDITIONED_ON`), call `describe_ontology` with the label.
 
@@ -61,9 +61,9 @@ Always answer questions by following this fixed workflow:
 
 ## Step 1 — Read the ontology
 
-Read the ontology schema below. The `short_description`s distinguish
-similarly-labeled types; call `describe_ontology` for the full definition when
-two labels look close and the choice matters.
+Read the ontology schema below. The `description`s distinguish similarly-labeled
+types; call `describe_ontology` for the full definition when two labels look
+close and the choice matters.
 
 ## Step 2 — Ground entity mentions
 
@@ -100,23 +100,25 @@ Never skip step 1 or step 2. If a question is genuinely schema-free
 def _fetch_ontology_schema_json() -> str:
     """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
 
-    Embeds only `short_description` to keep the cached schema prefix compact;
-    full text is available on demand via the `describe_ontology` tool.
+    Embeds the compact `short_description` by default (set
+    `ONTOLOGY_COMPACT_SNAPSHOT=0` for `full_description`), under the uniform key
+    `description`. Full text is always available via the `describe_ontology` tool.
     """
+    field = snapshot_description_field()
     entity_types = _run(
-        """
+        f"""
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.short_description AS short_description
+               e.{field} AS description
         """
     )
     rels = _run(
-        """
+        f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.short_description AS short_description
+               r.{field} AS description
         """
     )
     return json.dumps(

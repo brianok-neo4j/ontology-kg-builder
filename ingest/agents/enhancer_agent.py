@@ -206,7 +206,7 @@ def _fetch_ontology_snapshot() -> dict:
         """
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.full_description AS full_description
+               e.full_description AS description
         ORDER BY e.entityLabel
         """
     )
@@ -216,7 +216,7 @@ def _fetch_ontology_snapshot() -> dict:
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.full_description AS full_description
+               r.full_description AS description
         ORDER BY a.entityLabel, r.relLabel, b.entityLabel
         """
     )

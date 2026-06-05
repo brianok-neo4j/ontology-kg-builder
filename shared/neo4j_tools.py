@@ -42,6 +42,22 @@ def _run(query: str, params: dict | None = None) -> list[dict]:
         return [dict(r) for r in result]
 
 
+def snapshot_description_field() -> str:
+    """Which description field the per-chunk ontology snapshots embed.
+
+    Returns `'short_description'` (compact, the default) or `'full_description'`
+    (verbose). Toggle with `ONTOLOGY_COMPACT_SNAPSHOT=0`. Both fields are ALWAYS
+    written to the graph regardless of this flag — it only selects which one is
+    serialized into the prompt snapshot, so switching modes between runs is safe
+    (no graph-schema mismatch). The return value is one of two fixed literals and
+    is safe to interpolate into Cypher.
+    """
+    compact = os.environ.get("ONTOLOGY_COMPACT_SNAPSHOT", "1").strip().lower() not in (
+        "0", "false", "no", "off"
+    )
+    return "short_description" if compact else "full_description"
+
+
 def _run_write(
     query: str,
     params: dict | None = None,

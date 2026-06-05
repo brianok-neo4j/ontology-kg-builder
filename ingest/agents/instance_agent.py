@@ -26,7 +26,7 @@ import json
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
-from shared.neo4j_tools import _run, describe_ontology, read_cypher, write_cypher
+from shared.neo4j_tools import _run, describe_ontology, read_cypher, snapshot_description_field, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -41,8 +41,8 @@ conform strictly to a pre-built ontology schema.
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
 read it directly from this prompt for every chunk. To stay compact it shows
-only each type's/relationship's `short_description`; if you need the full
-definition to pick the right label, call `describe_ontology` with the label.
+each type's/relationship's brief `description`; if you need the full definition
+to pick the right label, call `describe_ontology` with the label.
 
 ## How to work
 
@@ -135,23 +135,25 @@ _SUMMARY_INSTRUCTION = (
 def _fetch_ontology_schema_json() -> str:
     """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
 
-    Embeds only `short_description` to keep the cached schema prefix compact;
-    full text is available on demand via the `describe_ontology` tool.
+    Embeds the compact `short_description` by default (set
+    `ONTOLOGY_COMPACT_SNAPSHOT=0` for `full_description`), under the uniform key
+    `description`. Full text is always available via the `describe_ontology` tool.
     """
+    field = snapshot_description_field()
     entity_types = _run(
-        """
+        f"""
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.short_description AS short_description
+               e.{field} AS description
         """
     )
     rels = _run(
-        """
+        f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.short_description AS short_description
+               r.{field} AS description
         """
     )
     return json.dumps(
