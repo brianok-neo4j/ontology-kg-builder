@@ -216,3 +216,18 @@ Each `EntityType` node and `RelType` edge carries two description fields: a
 `full_description` (the complete definition, fetched on demand via
 `describe_ontology`). Instance relationships may carry a `detail` property
 capturing what specifically is required/governed/etc.
+
+## Known limitations
+
+**No instance-layer entity resolution.** Instance nodes are deduplicated only by
+exact `MERGE` on `name`. The pipeline does **not** reconcile different surface
+forms that refer to the same real-world entity, so one entity often fragments
+across many nodes — e.g. in the FLTCA pilot "the Act" appeared as
+`Fixing Long-Term Care Act, 2021, S.O. 2021, c. 39, Sched. 1`,
+`Fixing Long-Term Care Act, 2021`, `Part IV of the Fixing Long-Term Care Act`,
+and ~20 other variants, none of which merge. This degrades graph quality and
+query recall: a question about the entity matches only whichever variant the
+generated Cypher happens to hit, not the union of facts spread across all of
+them. Mitigations (a post-hoc co-reference merge pass, or a dedicated
+entity-resolution stage with alias normalisation / fuzzy / embedding matching)
+are not yet implemented.
