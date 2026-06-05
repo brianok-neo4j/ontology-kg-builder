@@ -25,6 +25,7 @@ from strands_tools import http_request
 
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
+from eval.models import USAGE_KEYS, cost_of
 
 # Strong, independent judge by default. Override per run with --judge-model.
 JUDGE_MODEL = "claude-opus-4-8"
@@ -132,9 +133,10 @@ def build_judge(doc_text: str | None = None, model_id: str | None = None) -> Age
     system_blocks = [
         {"type": "text", "text": JUDGE_SYSTEM_PROMPT, "cache_control": cache_control()},
     ]
-    return Agent(
+    effective_model = model_id or JUDGE_MODEL
+    judge = Agent(
         model=AnthropicModel(
-            model_id=model_id or JUDGE_MODEL,
+            model_id=effective_model,
             max_tokens=JUDGE_MAX_TOKENS,
             params={"system": system_blocks},
         ),
@@ -144,6 +146,12 @@ def build_judge(doc_text: str | None = None, model_id: str | None = None) -> Age
             window_size=20, should_truncate_results=True,
         ),
     )
+    # For per-question judge-cost accounting: the model id to price against and a
+    # cumulative-usage baseline (accumulated_usage is cumulative across the many
+    # gradings this one agent performs, so grade_answer diffs against it).
+    judge._model_id = effective_model
+    judge._prev_usage = {k: 0 for k in USAGE_KEYS}
+    return judge
 
 
 _VERDICT_RE = re.compile(r"\{[^{}]*\"grade\"[^{}]*\}", re.DOTALL)
@@ -170,7 +178,13 @@ def _parse_verdict(text: str) -> dict:
 
 
 def grade_answer(judge: Agent, question: str, answer: str) -> dict:
-    """Grade a single (question, answer) pair. Returns {grade, rationale, evidence}."""
+    """Grade a single (question, answer) pair.
+
+    Returns {grade, rationale, evidence, judge_usage, judge_cost} — the last two
+    are this grading's token usage and dollar cost (diffed from the judge's
+    cumulative usage and priced at the judge model), so per-question cost can
+    include the cost of evaluating it.
+    """
     judge.messages = []  # each grading is independent
     prompt = (
         f"## Question\n{question}\n\n"
@@ -181,6 +195,19 @@ def grade_answer(judge: Agent, question: str, answer: str) -> dict:
     )
     try:
         result = judge(prompt)
+        summary = result.metrics.get_summary() if result and result.metrics else {}
     except Exception as exc:  # noqa: BLE001 — a grading failure shouldn't kill the run
-        return {"grade": "Error", "rationale": f"{type(exc).__name__}: {exc}", "evidence": ""}
-    return _parse_verdict(str(result))
+        return {"grade": "Error", "rationale": f"{type(exc).__name__}: {exc}",
+                "evidence": "", "judge_usage": {}, "judge_cost": 0.0}
+
+    # Diff this grading's usage from the judge's cumulative running total.
+    cum = summary.get("accumulated_usage", {}) or {}
+    prev = getattr(judge, "_prev_usage", {k: 0 for k in USAGE_KEYS})
+    usage = {k: (cum.get(k, 0) or 0) - prev.get(k, 0) for k in USAGE_KEYS}
+    judge._prev_usage = {k: (cum.get(k, 0) or 0) for k in USAGE_KEYS}
+    model_id = getattr(judge, "_model_id", JUDGE_MODEL)
+
+    verdict = _parse_verdict(str(result))
+    verdict["judge_usage"] = usage
+    verdict["judge_cost"] = cost_of(usage, model_id)
+    return verdict

@@ -21,6 +21,7 @@ from pathlib import Path
 from query.agent import build_agent as build_query_agent
 from eval.models import USAGE_KEYS, cost_of
 from eval.judge import GRADES, build_judge, grade_answer
+from eval.metrics_log import log_call, open_log
 
 
 def load_source_text(source: str | None) -> str | None:
@@ -36,14 +37,21 @@ def load_source_text(source: str | None) -> str | None:
     return "\n\n".join(chunks) if chunks else None
 
 
-def _run_one_model(model_id: str, questions: list[str]) -> list[dict]:
+def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dict]:
     """Run every question through one model; return per-question records.
 
     One agent per model, conversation reset per question so each question is
     independent and its metrics are isolated. accumulated_usage is cumulative
     across questions, so we diff against the previous question.
+
+    Also writes a per-model `<run_id>_query_<model>_metrics.jsonl` in the
+    ingest/query metrics format so `cost_watch.py` / `ingest cost` can read it.
     """
     agent = build_query_agent(model_id=model_id)
+    log_path = open_log(
+        run_id, "query-ab", model_id, role="query",
+        question_count=len(questions), chunk_count=len(questions),
+    )
     prev = {k: 0 for k in USAGE_KEYS}
     prev_cycles = 0
     rows: list[dict] = []
@@ -66,6 +74,7 @@ def _run_one_model(model_id: str, questions: list[str]) -> list[dict]:
         cycles = cum_cycles - prev_cycles
         prev = {k: cum.get(k, 0) for k in USAGE_KEYS}
         prev_cycles = cum_cycles
+        cost = cost_of(usage, model_id)
 
         rows.append({
             "q": i,
@@ -75,24 +84,48 @@ def _run_one_model(model_id: str, questions: list[str]) -> list[dict]:
             "usage": usage,
             "cycles": cycles,
             "duration_s": round(duration, 2),
-            "cost": cost_of(usage, model_id),
+            "cost": cost,
         })
+        log_call(
+            log_path, "query_question",
+            model_id=model_id, question_num=i, question=q,
+            usage=usage, cycles=cycles, duration_s=round(duration, 2), cost=cost,
+            error=answer.startswith("ERROR:"),
+        )
     return rows
 
 
-def _judge_all(by_model: dict[str, list[dict]], source: str | None, judge_model: str | None) -> None:
-    """Grade every answer in-place with the LLM judge (adds grade/rationale/evidence)."""
+def _judge_all(
+    by_model: dict[str, list[dict]], source: str | None,
+    judge_model: str | None, run_id: str,
+) -> None:
+    """Grade every answer in-place with the LLM judge (adds grade/rationale/evidence).
+
+    Writes a `<run_id>_judge_<model>_metrics.jsonl` so judging cost is tracked in
+    the same format as everything else, priced at the judge model's own rate.
+    """
     doc_text = load_source_text(source)
     if source and not doc_text:
         print(f"  ! could not load source document {source!r}; judging with web + knowledge only")
     print(f"\n=== Judging answers ({judge_model or 'default judge'}"
           f"{', with source doc' if doc_text else ', no source doc'}) ===")
     judge = build_judge(doc_text=doc_text, model_id=judge_model)
+    n_gradings = sum(len(rows) for rows in by_model.values())
+    log_path = open_log(
+        run_id, "query-ab", judge._model_id, role="judge",
+        question_count=n_gradings, chunk_count=n_gradings,
+    )
     for model, rows in by_model.items():
         for r in rows:
             verdict = grade_answer(judge, r["question"], r["answer"])
             r.update(verdict)
             print(f"  [{model}] Q{r['q']}: {verdict['grade']}")
+            log_call(
+                log_path, "judge",
+                model_id=judge._model_id, answer_model=model, question_num=r["q"],
+                usage=verdict.get("judge_usage", {}), cost=verdict.get("judge_cost", 0.0),
+                grade=verdict.get("grade", ""),
+            )
 
 
 def run_query_ab(
@@ -116,10 +149,10 @@ def run_query_ab(
     by_model: dict[str, list[dict]] = {}
     for model in models:
         print(f"\n=== Query A/B: {model} ({len(questions)} questions) ===")
-        by_model[model] = _run_one_model(model, questions)
+        by_model[model] = _run_one_model(model, questions, stamp)
 
     if judge:
-        _judge_all(by_model, source, judge_model)
+        _judge_all(by_model, source, judge_model, stamp)
 
     raw_path = out_dir / f"query_ab_{stamp}.jsonl"
     with raw_path.open("w", encoding="utf-8") as f:
@@ -136,6 +169,7 @@ def run_query_ab(
 def _totals(rows: list[dict]) -> dict:
     return {
         "cost": sum(r["cost"] for r in rows),
+        "judge_cost": sum(r.get("judge_cost", 0.0) for r in rows),
         "duration_s": sum(r["duration_s"] for r in rows),
         "cycles": sum(r["cycles"] for r in rows),
         "errors": sum(1 for r in rows if r["answer"].startswith("ERROR:")),
@@ -154,14 +188,25 @@ def _write_report(path: Path, models, questions, by_model) -> None:
 
     # Aggregate totals
     lines.append("## Totals\n")
-    lines.append("| Model | Total cost | Total time | Total cycles | Errors | $/q | s/q |")
-    lines.append("|---|---:|---:|---:|---:|---:|---:|")
-    for m in models:
-        t = _totals(by_model[m])
-        lines.append(
-            f"| `{m}` | ${t['cost']:.4f} | {t['duration_s']:.1f}s | {t['cycles']} | "
-            f"{t['errors']} | ${t['cost']/n:.4f} | {t['duration_s']/n:.1f} |"
-        )
+    if judged:
+        lines.append("| Model | Answer cost | Judge cost | Total cost | Total time | Total cycles | Errors | answer $/q | s/q |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+        for m in models:
+            t = _totals(by_model[m])
+            lines.append(
+                f"| `{m}` | ${t['cost']:.4f} | ${t['judge_cost']:.4f} | "
+                f"${t['cost'] + t['judge_cost']:.4f} | {t['duration_s']:.1f}s | {t['cycles']} | "
+                f"{t['errors']} | ${t['cost']/n:.4f} | {t['duration_s']/n:.1f} |"
+            )
+    else:
+        lines.append("| Model | Total cost | Total time | Total cycles | Errors | $/q | s/q |")
+        lines.append("|---|---:|---:|---:|---:|---:|---:|")
+        for m in models:
+            t = _totals(by_model[m])
+            lines.append(
+                f"| `{m}` | ${t['cost']:.4f} | {t['duration_s']:.1f}s | {t['cycles']} | "
+                f"{t['errors']} | ${t['cost']/n:.4f} | {t['duration_s']/n:.1f} |"
+            )
     lines.append("")
 
     # Grade distribution (if judged)
@@ -183,15 +228,23 @@ def _write_report(path: Path, models, questions, by_model) -> None:
         lines.append("")
 
     # Per-question cost/latency/cycles
-    lines.append("## Per-question cost / latency / cycles\n")
-    header = "| Q | " + " | ".join(f"{m} $ / s / cyc" for m in models) + " |"
+    cost_legend = "answer$ + judge$ / s / cyc" if judged else "$ / s / cyc"
+    lines.append(f"## Per-question cost / latency / cycles\n")
+    lines.append(f"_Cell: {cost_legend}_\n")
+    header = "| Q | " + " | ".join(f"`{m}`" for m in models) + " |"
     lines.append(header)
     lines.append("|---|" + "---|" * len(models))
     for i in range(n):
         cells = []
         for m in models:
             r = by_model[m][i]
-            cells.append(f"${r['cost']:.4f} / {r['duration_s']:.1f}s / {r['cycles']}")
+            if judged:
+                cells.append(
+                    f"${r['cost']:.4f} + ${r.get('judge_cost', 0.0):.4f} / "
+                    f"{r['duration_s']:.1f}s / {r['cycles']}"
+                )
+            else:
+                cells.append(f"${r['cost']:.4f} / {r['duration_s']:.1f}s / {r['cycles']}")
         lines.append(f"| {i+1} | " + " | ".join(cells) + " |")
     lines.append("")
 
@@ -202,8 +255,10 @@ def _write_report(path: Path, models, questions, by_model) -> None:
         for m in models:
             r = by_model[m][i]
             grade = f" — **{r['grade']}**" if judged else ""
+            judge_c = f", judge ${r.get('judge_cost', 0.0):.4f}" if judged else ""
             lines.append(
-                f"**`{m}`**{grade} ({r['cycles']} cycles, {r['duration_s']:.1f}s, ${r['cost']:.4f}):\n"
+                f"**`{m}`**{grade} ({r['cycles']} cycles, {r['duration_s']:.1f}s, "
+                f"answer ${r['cost']:.4f}{judge_c}):\n"
             )
             lines.append(f"> {r['answer'].strip().replace(chr(10), chr(10) + '> ')}\n")
             if judged and r.get("rationale"):

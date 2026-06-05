@@ -92,6 +92,12 @@ _PRICING: dict[str, dict[str, float]] = {
     },
 }
 
+# Per-call events that count as one unit of work in a metrics log (used for the
+# "N completed" line and cost/event). Spans ingest stages and the eval harness.
+_COUNTABLE_EVENTS = (
+    "ontology_chunk", "instance_chunk", "enhancer", "query_question", "judge",
+)
+
 
 def run_cost(log_path: str) -> None:
     """Parse a metrics JSONL log and print a cost breakdown."""
@@ -134,7 +140,7 @@ def run_cost(log_path: str) -> None:
     if per_call_format:
         for r in records:
             ev = r.get("event", "")
-            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+            if ev in _COUNTABLE_EVENTS:
                 chunk_events += 1
             if "_error" in ev:
                 errors += 1
@@ -145,7 +151,7 @@ def run_cost(log_path: str) -> None:
         prev = {k: 0 for k in _USAGE_KEYS}
         for r in records:
             ev = r.get("event", "")
-            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+            if ev in _COUNTABLE_EVENTS:
                 chunk_events += 1
             if "_error" in ev:
                 errors += 1

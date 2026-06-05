@@ -42,6 +42,22 @@ latency/cycles are measured directly; cycle count is a useful quality proxy
 (a model that needs many more cycles is struggling to ground entities or
 compose Cypher). Answers are written side-by-side in the report.
 
+#### Metrics logs (`eval/logs/`)
+
+Alongside the markdown/JSON report, each run drops `<run_id>_metrics.jsonl`
+files in `eval/logs/` in the **same format the ingest/query tools emit** — a
+`run_start` header plus a per-call `usage`/`cycles`/`duration_s`/`cost` record.
+One file is written **per model** (`…_query_<model>_metrics.jsonl`, and
+`…_judge_<model>_metrics.jsonl` when `--judge` is used), so each log is
+single-model and the shared cost tooling — which prices a whole log by its
+`run_start` model — stays exact even for an A/B run, and judging cost is priced
+at the judge model's own rate. Analyze them like any ingest log:
+
+```bash
+python scripts/cost_watch.py eval/logs/<run_id>_query_<model>_metrics.jsonl
+python -m ingest.main cost   eval/logs/<run_id>_judge_<model>_metrics.jsonl
+```
+
 ### LLM judge (`--judge`)
 
 Add `--judge` to grade each answer **Excellent / Good / Partial / Weak** (the
