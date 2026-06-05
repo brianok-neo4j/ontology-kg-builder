@@ -242,6 +242,25 @@ Apply the same generalization discipline as entity labels.
   node MERGEs and edge MERGEs in one statement causes variable-scoping errors
   and stray "ghost" nodes. Keep node writes and edge writes in separate calls.
 
+- **Every node variable in a relationship MERGE must be bound by a MATCH in the
+  same query, spelled identically.** An undefined variable does NOT raise an
+  error — Cypher silently CREATEs a new unlabeled node (a "ghost"). Before each
+  edge MERGE, verify every variable was MATCHed above under the exact same name.
+
+  Bad — `obligation` was never matched (the node was bound as `ob`), so this
+  creates a ghost node:
+  ```
+  MATCH (ob:EntityType {entityLabel: 'Obligation'})
+  MATCH (role:EntityType {entityLabel: 'Role'})
+  MERGE (obligation)-[r:RelType {relLabel: 'APPLIES_TO'}]->(role)   // 'obligation' is unbound!
+  ```
+  Good — same variable name throughout:
+  ```
+  MATCH (ob:EntityType {entityLabel: 'Obligation'})
+  MATCH (role:EntityType {entityLabel: 'Role'})
+  MERGE (ob)-[r:RelType {relLabel: 'APPLIES_TO'}]->(role)
+  ```
+
 - **Make only the calls you actually need — at most two, often fewer:**
   - New/updated node types AND new edges → **two calls**: nodes first, then edges.
   - Only new edges (every node type this chunk needs already exists in the

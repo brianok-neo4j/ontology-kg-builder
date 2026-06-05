@@ -105,6 +105,12 @@ At the start of each chunk you will be given:
    Pass the chunk elementId as a parameter. MERGE deduplicates on the
    matching pattern, so re-running is idempotent.
 
+   **Every node variable in a relationship MERGE must be bound by a MATCH/MERGE
+   in the same query, spelled identically.** An undefined variable does NOT
+   error — Cypher silently creates a new unlabeled "ghost" node. E.g. if you
+   `MATCH (p:Person {name: 'Andy Jassy'})`, the edge MERGE must use `p`, not
+   `person`. Check every variable before issuing the edge call.
+
 5. Use the entity's `name` field for MERGE deduplication (e.g.
    `MERGE (p:Person {name: '...'})`). Set additional properties with `SET`
    in the same statement when relevant.
