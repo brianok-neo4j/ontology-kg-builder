@@ -29,7 +29,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
-from shared.neo4j_tools import _run, find_entities_by_name
+from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name
 from ingest.tools import get_ontology_schema
 from query.tools import run_read_cypher
 
@@ -40,8 +40,8 @@ MODEL_MAX_TOKENS = 8192
 BASE_SYSTEM_PROMPT = """You are a graph question-answering agent. The graph is a
 Neo4j database with two layers:
 
-- Ontology layer: `EntityType` nodes (property `entityLabel`, `description`)
-  connected by `RelType` edges (property `relLabel`, `description`).
+- Ontology layer: `EntityType` nodes (property `entityLabel`, `short_description`)
+  connected by `RelType` edges (property `relLabel`, `short_description`).
 - Instance layer: nodes whose Neo4j label is the EntityType's `entityLabel`,
   always with a `name` property; connected to each other by edges whose type
   is a RelType `relLabel`; also connected to `Chunk` nodes via FROM_CHUNK
@@ -49,7 +49,10 @@ Neo4j database with two layers:
 
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
-read it directly from this prompt for every question.
+read it directly from this prompt for every question. To stay compact it shows
+only each type's/relationship's `short_description`; when you need the full
+definition to choose between similar labels (e.g. `GOVERNS` vs `RESTRICTS` vs
+`CONDITIONED_ON`), call `describe_ontology` with the label.
 
 If the schema has changed since this agent was built, call `get_ontology_schema`
 to refresh it before composing your Cypher.
@@ -58,8 +61,9 @@ Always answer questions by following this fixed workflow:
 
 ## Step 1 — Read the ontology
 
-Read the ontology schema below. The `description` fields matter — they
-distinguish similarly-labeled types.
+Read the ontology schema below. The `short_description`s distinguish
+similarly-labeled types; call `describe_ontology` for the full definition when
+two labels look close and the choice matters.
 
 ## Step 2 — Ground entity mentions
 
@@ -94,13 +98,16 @@ Never skip step 1 or step 2. If a question is genuinely schema-free
 
 
 def _fetch_ontology_schema_json() -> str:
-    """Read the ontology directly from Neo4j (bypassing the @tool wrapper)."""
+    """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
+
+    Embeds only `short_description` to keep the cached schema prefix compact;
+    full text is available on demand via the `describe_ontology` tool.
+    """
     entity_types = _run(
         """
         MATCH (e:EntityType)
-        RETURN elementId(e) AS id,
-               e.entityLabel AS entityLabel,
-               e.description AS description
+        RETURN e.entityLabel AS entityLabel,
+               e.short_description AS short_description
         """
     )
     rels = _run(
@@ -109,7 +116,7 @@ def _fetch_ontology_schema_json() -> str:
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.short_description AS short_description
         """
     )
     return json.dumps(
@@ -144,7 +151,7 @@ def build_agent(model_id: str | None = None) -> Agent:
             params={"system": system_blocks},
         ),
         system_prompt=BASE_SYSTEM_PROMPT,
-        tools=[find_entities_by_name, run_read_cypher, get_ontology_schema],
+        tools=[find_entities_by_name, run_read_cypher, get_ontology_schema, describe_ontology],
         # Bound the conversation so a long REPL session doesn't grow unboundedly
         # (each question would otherwise re-send the whole prior session as
         # input every cycle). window_size=40 is well above the worst observed

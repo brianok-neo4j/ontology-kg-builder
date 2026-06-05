@@ -26,7 +26,7 @@ import json
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
-from shared.neo4j_tools import _run, read_cypher, write_cypher
+from shared.neo4j_tools import _run, describe_ontology, read_cypher, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -40,7 +40,9 @@ conform strictly to a pre-built ontology schema.
 
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
-read it directly from this prompt for every chunk.
+read it directly from this prompt for every chunk. To stay compact it shows
+only each type's/relationship's `short_description`; if you need the full
+definition to pick the right label, call `describe_ontology` with the label.
 
 ## How to work
 
@@ -131,13 +133,16 @@ _SUMMARY_INSTRUCTION = (
 
 
 def _fetch_ontology_schema_json() -> str:
-    """Read the ontology directly from Neo4j (bypassing the @tool wrapper)."""
+    """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
+
+    Embeds only `short_description` to keep the cached schema prefix compact;
+    full text is available on demand via the `describe_ontology` tool.
+    """
     entity_types = _run(
         """
         MATCH (e:EntityType)
-        RETURN elementId(e) AS id,
-               e.entityLabel AS entityLabel,
-               e.description AS description
+        RETURN e.entityLabel AS entityLabel,
+               e.short_description AS short_description
         """
     )
     rels = _run(
@@ -146,7 +151,7 @@ def _fetch_ontology_schema_json() -> str:
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.short_description AS short_description
         """
     )
     return json.dumps(
@@ -208,10 +213,12 @@ def build_agent(
         ),
         system_prompt=prompt,
         # Direct-driver tools only: write_cypher (batched MERGEs, with
-        # transient-error retry) and read_cypher (targeted verification). The
-        # high-level create_or_merge_node / create_relationship helpers are
-        # deliberately omitted so the agent can't fall back to one-MERGE-per-call.
-        tools=[write_cypher, read_cypher],
+        # transient-error retry), read_cypher (targeted verification), and
+        # describe_ontology (full_description on demand — the schema shows only
+        # short_descriptions). The high-level create_or_merge_node /
+        # create_relationship helpers are deliberately omitted so the agent
+        # can't fall back to one-MERGE-per-call.
+        tools=[write_cypher, read_cypher, describe_ontology],
         conversation_manager=SlidingWindowConversationManager(
             window_size=6,
             should_truncate_results=True,

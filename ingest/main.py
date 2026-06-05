@@ -413,19 +413,25 @@ def _bootstrap_ontology_base(vocab: DomainVocabulary | None = None) -> None:
     _run(
         """
         MERGE (doc:EntityType {entityLabel: 'Document'})
-          SET doc.description = 'A source document ingested into the system. Each Document is split into one or more Chunks.'
+          SET doc.short_description = 'a source document ingested into the system',
+              doc.full_description = 'A source document ingested into the system. Each Document is split into one or more Chunks.'
         MERGE (chunk:EntityType {entityLabel: 'Chunk'})
-          SET chunk.description = 'A contiguous span of text extracted from a Document. Chunks are the unit of agent processing and the source of every extracted instance entity.'
+          SET chunk.short_description = 'a contiguous span of text from a Document',
+              chunk.full_description = 'A contiguous span of text extracted from a Document. Chunks are the unit of agent processing and the source of every extracted instance entity.'
         MERGE (doc)-[r:RelType {relLabel: 'HAS_CHUNK'}]->(chunk)
-          SET r.description = 'A Document HAS_CHUNK each of the Chunks it was split into.'
+          SET r.short_description = 'a Document is split into Chunks',
+              r.full_description = 'A Document HAS_CHUNK each of the Chunks it was split into.'
         """
     )
     if vocab:
         for et in vocab.entity_types:
+            # Vocab descriptions are concise — seed both fields from them; the
+            # ontology agent refines each as it encounters the type in the corpus.
             _run(
                 """
                 MERGE (e:EntityType {entityLabel: $label})
-                ON CREATE SET e.description = $description
+                ON CREATE SET e.short_description = $description,
+                              e.full_description = $description
                 """,
                 {"label": et.label, "description": et.description},
             )

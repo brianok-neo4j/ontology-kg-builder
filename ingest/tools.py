@@ -11,23 +11,22 @@ from shared.neo4j_tools import _run
 
 @tool
 def get_ontology_schema() -> str:
-    """Fetch the full ontology schema from Neo4j.
+    """Fetch the ontology schema from Neo4j (compact form).
 
-    Returns all EntityType nodes and the RelType edges connecting them, including
-    each item's natural-language `description`, so reviewing agents can tell
-    similarly-named types apart by meaning rather than label alone.
+    Returns all EntityType nodes and the RelType edges connecting them with each
+    item's `short_description` — the same compact form embedded in agent prompts.
+    For an item's full definition, use the `describe_ontology` tool.
 
     Returns:
         JSON with keys:
-          entity_types  - list of {id, entityLabel, description}
-          relationships - list of {from_entityLabel, relLabel, to_entityLabel, description}
+          entity_types  - list of {entityLabel, short_description}
+          relationships - list of {from_entityLabel, relLabel, to_entityLabel, short_description}
     """
     entity_types = _run(
         """
         MATCH (e:EntityType)
-        RETURN elementId(e) AS id,
-               e.entityLabel AS entityLabel,
-               e.description AS description
+        RETURN e.entityLabel AS entityLabel,
+               e.short_description AS short_description
         """
     )
     rels = _run(
@@ -36,7 +35,7 @@ def get_ontology_schema() -> str:
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.short_description AS short_description
         """
     )
     return json.dumps(

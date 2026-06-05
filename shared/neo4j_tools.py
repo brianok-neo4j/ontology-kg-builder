@@ -205,6 +205,39 @@ def read_cypher(query: str, params_json: str = "{}") -> str:
 
 
 @tool
+def describe_ontology(label: str) -> str:
+    """Return the full description(s) for an ontology label.
+
+    The schema embedded in your prompt shows only `short_description`s to stay
+    compact. Call this when a short description isn't enough to tell two similar
+    EntityTypes or relationships apart, or before reusing a type you're unsure
+    about.
+
+    Args:
+        label: An EntityType `entityLabel` (e.g. 'Obligation') or a RelType
+               `relLabel` (e.g. 'GOVERNS').
+
+    Returns:
+        JSON with the matching EntityType's `full_description` (if any) and the
+        `full_description` of each RelType edge using that relLabel (if any).
+    """
+    entity_type = _run(
+        "MATCH (e:EntityType {entityLabel: $l}) "
+        "RETURN e.entityLabel AS entityLabel, e.full_description AS full_description",
+        {"l": label},
+    )
+    relationships = _run(
+        "MATCH (a:EntityType)-[r:RelType {relLabel: $l}]->(b:EntityType) "
+        "RETURN a.entityLabel AS `from`, r.relLabel AS relLabel, "
+        "b.entityLabel AS `to`, r.full_description AS full_description",
+        {"l": label},
+    )
+    return json.dumps(
+        {"entity_type": entity_type, "relationships": relationships}, default=str
+    )
+
+
+@tool
 def get_ontology_summary() -> str:
     """Return a summary of the current ontology in the graph.
 
