@@ -42,6 +42,22 @@ def _run(query: str, params: dict | None = None) -> list[dict]:
         return [dict(r) for r in result]
 
 
+def snapshot_description_field() -> str:
+    """Which description field the per-chunk ontology snapshots embed.
+
+    Returns `'short_description'` (compact, the default) or `'full_description'`
+    (verbose). Toggle with `ONTOLOGY_COMPACT_SNAPSHOT=0`. Both fields are ALWAYS
+    written to the graph regardless of this flag — it only selects which one is
+    serialized into the prompt snapshot, so switching modes between runs is safe
+    (no graph-schema mismatch). The return value is one of two fixed literals and
+    is safe to interpolate into Cypher.
+    """
+    compact = os.environ.get("ONTOLOGY_COMPACT_SNAPSHOT", "1").strip().lower() not in (
+        "0", "false", "no", "off"
+    )
+    return "short_description" if compact else "full_description"
+
+
 def _run_write(
     query: str,
     params: dict | None = None,
@@ -202,6 +218,39 @@ def read_cypher(query: str, params_json: str = "{}") -> str:
     if len(rows) > 100:
         rows = rows[:100] + [{"_warning": f"result truncated; {len(rows)} total rows"}]
     return json.dumps(rows, default=str)
+
+
+@tool
+def describe_ontology(label: str) -> str:
+    """Return the full description(s) for an ontology label.
+
+    The schema embedded in your prompt shows only `short_description`s to stay
+    compact. Call this when a short description isn't enough to tell two similar
+    EntityTypes or relationships apart, or before reusing a type you're unsure
+    about.
+
+    Args:
+        label: An EntityType `entityLabel` (e.g. 'Obligation') or a RelType
+               `relLabel` (e.g. 'GOVERNS').
+
+    Returns:
+        JSON with the matching EntityType's `full_description` (if any) and the
+        `full_description` of each RelType edge using that relLabel (if any).
+    """
+    entity_type = _run(
+        "MATCH (e:EntityType {entityLabel: $l}) "
+        "RETURN e.entityLabel AS entityLabel, e.full_description AS full_description",
+        {"l": label},
+    )
+    relationships = _run(
+        "MATCH (a:EntityType)-[r:RelType {relLabel: $l}]->(b:EntityType) "
+        "RETURN a.entityLabel AS `from`, r.relLabel AS relLabel, "
+        "b.entityLabel AS `to`, r.full_description AS full_description",
+        {"l": label},
+    )
+    return json.dumps(
+        {"entity_type": entity_type, "relationships": relationships}, default=str
+    )
 
 
 @tool

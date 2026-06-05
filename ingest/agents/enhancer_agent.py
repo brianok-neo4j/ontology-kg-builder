@@ -66,9 +66,15 @@ fine via read_neo4j_cypher.)
 ## Graph model (read this first)
 
 The ontology is stored using two graph elements:
-  - `:EntityType` — a node, with properties `entityLabel` and `description`.
+  - `:EntityType` — a node, with properties `entityLabel`, `short_description`
+    (a ≤12-word phrase) and `full_description` (the complete definition).
   - `:RelType`    — a **relationship** between two `:EntityType` nodes, with
-    properties `relLabel` (e.g. `"SUBCLASS_OF"`, `"SAME_AS"`) and `description`.
+    properties `relLabel` (e.g. `"SUBCLASS_OF"`, `"SAME_AS"`), `short_description`
+    and `full_description`.
+
+The snapshot below gives you the `full_description` of each type/relationship so
+you can judge equivalence. Whenever you create or update a type/edge you MUST set
+**both** `short_description` and `full_description`.
 
 `RelType` is a relationship type, NOT a node label. Do not `MERGE (r:RelType {...})`
 — that creates a stray node that no other query can see. Always create RelTypes as
@@ -78,7 +84,8 @@ edges between two existing EntityType nodes:
 MATCH (from:EntityType {entityLabel: 'ChildLabel'})
 MATCH (to:EntityType   {entityLabel: 'ParentLabel'})
 MERGE (from)-[r:RelType {relLabel: 'SUBCLASS_OF'}]->(to)
-SET r.description = 'ChildLabel is a kind of ParentLabel — ...'
+SET r.short_description = 'is a kind of ParentLabel',
+    r.full_description  = 'ChildLabel is a kind of ParentLabel — ...'
 ```
 
 Same pattern for `SAME_AS` (between equivalent EntityTypes) and for any rewired
@@ -86,7 +93,7 @@ edge. To create a new parent EntityType:
 
 ```cypher
 MERGE (p:EntityType {entityLabel: 'NewParent'})
-SET p.description = '...'
+SET p.short_description = '...', p.full_description = '...'
 ```
 
 To delete a redundant EntityType after copying its edges onto the surviving one:
@@ -101,22 +108,41 @@ syntax errors when descriptions contain `'`.
 
 ## Use the descriptions
 
-Every `EntityType` node and every `RelType` edge has a `description` property —
-a natural-language definition written by the schema builder. The `entityLabel`
-and `relLabel` strings alone are often ambiguous (e.g. two EntityTypes both
-labelled "Revenue" might describe very different things). **Always read the
-descriptions in the snapshot before deciding whether two types are duplicates,
-whether a type is overly granular, or whether several types share a common
-parent.** When the labels look similar but the descriptions describe different
-concepts, leave them alone. When the labels differ but the descriptions
-describe the same concept, that is your signal to merge or link.
+Every `EntityType` node and every `RelType` edge has a `full_description` —
+a natural-language definition written by the schema builder (the snapshot shows
+it). The `entityLabel` and `relLabel` strings alone are often ambiguous (e.g.
+two EntityTypes both labelled "Revenue" might describe very different things).
+**Always read the full descriptions in the snapshot before deciding whether two
+types are duplicates, whether a type is overly granular, or whether several
+types share a common parent.** When the labels look similar but the descriptions
+describe different concepts, leave them alone. When the labels differ but the
+descriptions describe the same concept, that is your signal to merge or link.
 
 When you create new EntityTypes (e.g. a parent in a hierarchy) or new RelTypes
-(SAME_AS, SUBCLASS_OF, or rewired edges), you MUST also set a `description` on
-them. When you merge two types, write a description on the surviving type that
-captures the combined meaning.
+(SAME_AS, SUBCLASS_OF, or rewired edges), you MUST set BOTH `short_description`
+(≤12 words) and `full_description`. When you merge two types, write both on the
+surviving type so they capture the combined meaning.
 
 ## What to look for and how to fix it
+
+### 0. Ghost nodes (do this FIRST)
+A correct ontology has `RelType` edges only between two `:EntityType` nodes. A
+malformed write can leave a "ghost" node — a node with no label (or any
+non-`EntityType` node) dangling off a `RelType` edge. Before anything else,
+remove them, then verify none remain:
+
+```cypher
+MATCH (g)-[:RelType]-()
+WHERE NOT g:EntityType
+DETACH DELETE g
+```
+```cypher
+// verify: should return 0
+MATCH (g)-[:RelType]-() WHERE NOT g:EntityType RETURN count(g) AS ghosts
+```
+These are not real types — never try to merge, link, or describe them; just
+delete them. (Do not delete `:EntityType` nodes here — including `Document` and
+`Chunk`, which are legitimate EntityTypes.)
 
 ### 1. Duplicate or equivalent EntityTypes
 If two EntityType nodes clearly represent the same concept — judged primarily
@@ -189,12 +215,17 @@ Confirm the right category using the node's `description`, then:
 
 
 def _fetch_ontology_snapshot() -> dict:
-    """Read the current EntityType / RelType graph state from Neo4j."""
+    """Read the current EntityType / RelType graph state from Neo4j.
+
+    The enhancer judges equivalence/hierarchy from descriptions, so it embeds the
+    `full_description` (it's a single cached snapshot — size isn't a concern here,
+    unlike the per-chunk agents which embed `short_description`).
+    """
     entity_types = _run(
         """
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.description AS description
+               e.full_description AS description
         ORDER BY e.entityLabel
         """
     )
@@ -204,7 +235,7 @@ def _fetch_ontology_snapshot() -> dict:
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.full_description AS description
         ORDER BY a.entityLabel, r.relLabel, b.entityLabel
         """
     )

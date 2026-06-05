@@ -42,7 +42,7 @@ from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.tools.mcp import MCPClient
 
-from shared.neo4j_tools import _run
+from shared.neo4j_tools import _run, describe_ontology, snapshot_description_field
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 from ingest.domain_vocab import DomainVocabulary
@@ -58,14 +58,19 @@ chunks and produce a schema-level ontology in Neo4j — no instance data.
 
 Use exactly these node and edge types:
 - Nodes:  `EntityType` with properties:
-    - `entityLabel` (the label name, PascalCase)
-    - `description` (a natural-language description of what this entity type represents)
+    - `entityLabel`       (the label name, PascalCase)
+    - `short_description` (a ≤12-word phrase that distinguishes this type — shown
+                           in the schema snapshot)
+    - `full_description`  (the complete natural-language definition of what this
+                           entity type represents)
 - Edges:  `RelType` with properties:
-    - `relLabel`    (the rel type, UPPER_SNAKE_CASE — use a generic verb category,
-                     not a specific predicate; see ## Relationship generalization)
-    - `description` (natural-language description of what this relationship represents,
-                     its direction semantics, and what kinds of values the instance
-                     layer's `detail` property will hold for this edge type)
+    - `relLabel`          (the rel type, UPPER_SNAKE_CASE — use a generic verb
+                           category, not a specific predicate; see ## Relationship
+                           generalization)
+    - `short_description` (a ≤12-word phrase shown in the schema snapshot)
+    - `full_description`  (the complete definition of what this relationship
+                           represents, its direction semantics, and what kinds of
+                           values the instance layer's `detail` property will hold)
 
 ## Current schema (cached)
 
@@ -73,9 +78,15 @@ The current state of the ontology is provided below in the section titled
 "Ontology snapshot". This snapshot is taken just before you process this
 chunk. You MUST treat it as the source of truth for what already exists.
 
+To keep it compact, the snapshot shows each type's/relationship's brief
+`description`. If that isn't enough to decide whether a type already covers your
+concept (or to tell two similar types apart), call the `describe_ontology` tool
+with the label to get its `full_description` — do this BEFORE creating a
+near-duplicate type.
+
 DO NOT call `get-schema` or `read-cypher` to inspect EntityType / RelType
-nodes — the snapshot already has everything you need to know about what
-exists. Calling these tools wastes input tokens for no gain.
+nodes — the snapshot (plus `describe_ontology` for detail) already has
+everything you need. Calling those tools wastes input tokens for no gain.
 
 (If you need raw read-cypher for something the snapshot doesn't cover — say,
 a property on a non-EntityType node — that's fine. But do not use it to
@@ -84,30 +95,31 @@ re-list EntityType / RelType.)
 ## What to build
 
 1. Identify the types of entities present in the chunk (e.g. Person, Organization,
-   Product). For each, MERGE an `EntityType` node on `entityLabel` and SET its
-   `description` to a concise natural-language definition. If a description
-   already exists in the snapshot and is still accurate, **leave it alone — do
-   not MERGE the type at all.** Only re-SET a description when you are adding
-   genuinely new, distinguishing information or correcting an inaccuracy; never
-   to reword, rephrase, or lightly polish wording that is already accurate.
+   Product). For each, MERGE an `EntityType` node on `entityLabel` and SET BOTH
+   its `short_description` (a ≤12-word distinguishing phrase) and its
+   `full_description` (the complete definition). If the type already exists in
+   the snapshot and is still accurate, **leave it alone — do not MERGE it at
+   all.** Only re-SET descriptions when adding genuinely new, distinguishing
+   information or correcting an inaccuracy; never to reword wording that is
+   already accurate.
 
 2. Identify the types of relationships between entities. For each, MERGE a
    `RelType` edge between the relevant `EntityType` nodes on `relLabel` and SET
-   its `description`. Create relationships in one direction only. Omit inverses
-   unless they convey genuinely distinct semantic meaning. As with EntityType
-   descriptions: if a RelType edge already exists in the snapshot with an
-   accurate description, **leave it alone — do not MERGE it again.** Only re-SET
-   a RelType description for a substantive change (new distinguishing detail or
-   a corrected inaccuracy), never to reword wording that is already accurate.
+   BOTH its `short_description` and `full_description`. Create relationships in
+   one direction only. Omit inverses unless they convey genuinely distinct
+   semantic meaning. As with EntityTypes: if the edge already exists in the
+   snapshot and is accurate, **leave it alone — do not MERGE it again.** Only
+   re-SET for a substantive change, never to reword.
 
 3. `Document` and `Chunk` EntityType nodes already exist with a `HAS_CHUNK`
    RelType edge — and they already have descriptions. Do not recreate them or
    overwrite their descriptions.
 
 4. For every new EntityType you create (not Document), add a `RelType` edge
-   from that EntityType to the `Chunk` EntityType with `relLabel = "FROM_CHUNK"`
-   and a description such as "links an instance entity back to the source
-   Chunk it was extracted from".
+   from that EntityType to the `Chunk` EntityType with `relLabel = "FROM_CHUNK"`,
+   a `short_description` like "source-chunk provenance link", and a
+   `full_description` such as "links an instance entity back to the source Chunk
+   it was extracted from".
 
 ## Generalization
 
@@ -176,13 +188,14 @@ Apply the same generalization discipline as entity labels.
   | `REPORTS_CONCERNS_TO` | `REPORTS_TO` | `"concerns about resident safety"` |
   | `TRIGGERS_SUPERVISION_ORDER` | `TRIGGERS` | `"supervision order"` |
 
-- When writing the `description` on a RelType edge, mention what kinds of values
-  the `detail` property will take at the instance layer. Example:
+- When writing the `full_description` on a RelType edge, mention what kinds of
+  values the `detail` property will take at the instance layer. Example:
   ```
   MERGE (o)-[r:RelType {relLabel: 'REQUIRES'}]->(p)
-    SET r.description = "An Obligation REQUIRES something of a Party or Role.
-                         Instance detail values: 'background screening of staff',
-                         'written consent from resident', 'regular training', etc."
+    SET r.short_description = "imposes a mandate on a party",
+        r.full_description  = "An Obligation REQUIRES something of a Party or Role.
+                               Instance detail values: 'background screening of staff',
+                               'written consent from resident', 'regular training', etc."
   ```
 
 - **Preferred vocabulary.** Default to these labels before inventing new ones.
@@ -216,18 +229,37 @@ Apply the same generalization discipline as entity labels.
 
 - Only schema — no instances, no specific names or values from the documents.
 
-- **MERGE on `entityLabel` alone — never include `description` in the MERGE
-  match clause.** Including description causes a unique-constraint violation
-  when the node already exists with a different description string. Always:
+- **MERGE on `entityLabel` alone — never include a description in the MERGE
+  match clause.** That causes a unique-constraint violation when the node
+  already exists with different text. Always set descriptions in SET:
   ```
   MERGE (e:EntityType {entityLabel: 'Foo'})
-    SET e.description = "..."
+    SET e.short_description = "...", e.full_description = "..."
   ```
-  Never: `MERGE (e:EntityType {entityLabel: 'Foo', description: '...'})`
+  Never: `MERGE (e:EntityType {entityLabel: 'Foo', short_description: '...'})`
 
 - **Never create EntityType nodes and RelType edges in the same query.** Mixing
   node MERGEs and edge MERGEs in one statement causes variable-scoping errors
   and stray "ghost" nodes. Keep node writes and edge writes in separate calls.
+
+- **Every node variable in a relationship MERGE must be bound by a MATCH in the
+  same query, spelled identically.** An undefined variable does NOT raise an
+  error — Cypher silently CREATEs a new unlabeled node (a "ghost"). Before each
+  edge MERGE, verify every variable was MATCHed above under the exact same name.
+
+  Bad — `obligation` was never matched (the node was bound as `ob`), so this
+  creates a ghost node:
+  ```
+  MATCH (ob:EntityType {entityLabel: 'Obligation'})
+  MATCH (role:EntityType {entityLabel: 'Role'})
+  MERGE (obligation)-[r:RelType {relLabel: 'APPLIES_TO'}]->(role)   // 'obligation' is unbound!
+  ```
+  Good — same variable name throughout:
+  ```
+  MATCH (ob:EntityType {entityLabel: 'Obligation'})
+  MATCH (role:EntityType {entityLabel: 'Role'})
+  MERGE (ob)-[r:RelType {relLabel: 'APPLIES_TO'}]->(role)
+  ```
 
 - **Make only the calls you actually need — at most two, often fewer:**
   - New/updated node types AND new edges → **two calls**: nodes first, then edges.
@@ -243,9 +275,11 @@ Apply the same generalization discipline as entity labels.
   Node call (only when there are new/changed node types):
   ```
   MERGE (a:EntityType {entityLabel: 'Company'})
-    SET a.description = "A business entity ..."
+    SET a.short_description = "a business entity",
+        a.full_description  = "A business entity that produces or sells goods/services ..."
   MERGE (b:EntityType {entityLabel: 'Product'})
-    SET b.description = "A good or service ..."
+    SET b.short_description = "a good or service",
+        b.full_description  = "A good or service offered by a Company ..."
   ```
 
   Edge call (re-fetch nodes with MATCH — this may be the ONLY call):
@@ -254,20 +288,23 @@ Apply the same generalization discipline as entity labels.
   MATCH (b:EntityType {entityLabel: 'Product'})
   MATCH (c:EntityType {entityLabel: 'Chunk'})
   MERGE (a)-[r:RelType {relLabel: 'SELLS'}]->(b)
-    SET r.description = "A Company SELLS a Product."
+    SET r.short_description = "offers a product for sale",
+        r.full_description  = "A Company SELLS a Product. Instance detail: what is sold."
   MERGE (a)-[r2:RelType {relLabel: 'FROM_CHUNK'}]->(c)
-    SET r2.description = "links an instance entity back to the source Chunk"
+    SET r2.short_description = "source-chunk provenance link",
+        r2.full_description  = "links an instance entity back to the source Chunk"
   ```
 
-- **Always use double-quoted strings for `description` values** (as shown
-  above). Descriptions frequently contain apostrophes ("Residents' Council",
+- **Always use double-quoted strings for description values** (as shown above).
+  Descriptions frequently contain apostrophes ("Residents' Council",
   "operator's obligations") that silently break single-quoted Cypher literals.
   `entityLabel` and `relLabel` values are apostrophe-safe and may use single
   quotes.
 
 - Every EntityType and every RelType you create or update MUST have a non-empty
-  `description`. Descriptions should be specific enough that another agent
-  reading only the schema can tell two similar types apart.
+  `short_description` AND `full_description`. Keep `short_description` to a brief
+  distinguishing phrase (≤12 words); put the detail in `full_description`. Both
+  should be specific enough to tell two similar types apart.
 
 - **Do not rewrite descriptions for cosmetic reasons.** This applies to BOTH
   `EntityType` nodes and `RelType` edges. Only write an EntityType or RelType
@@ -290,22 +327,30 @@ _SUMMARY_INSTRUCTION = (
 
 
 def _fetch_ontology_snapshot() -> dict:
-    """Read the current EntityType / RelType graph state from Neo4j."""
+    """Read the current EntityType / RelType graph state from Neo4j.
+
+    Embeds the compact `short_description` by default (this snapshot is re-sent in
+    every chunk's prompt, so the short field keeps per-chunk cost bounded); set
+    `ONTOLOGY_COMPACT_SNAPSHOT=0` to embed `full_description` instead. Either way
+    the field is emitted under the uniform key `description`, and the full text is
+    always available via the `describe_ontology` tool.
+    """
+    field = snapshot_description_field()
     entity_types = _run(
-        """
+        f"""
         MATCH (e:EntityType)
         RETURN e.entityLabel AS entityLabel,
-               e.description AS description
+               e.{field} AS description
         ORDER BY e.entityLabel
         """
     )
     rels = _run(
-        """
+        f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.{field} AS description
         ORDER BY a.entityLabel, r.relLabel, b.entityLabel
         """
     )
@@ -388,14 +433,23 @@ def build_agent(
     if vocab:
         system_blocks.append({"type": "text", "text": _format_vocab_section(vocab)})
 
+    # Cache breakpoint on the STATIC prefix (base prompt + vocab). Unlike the
+    # snapshot, this prefix never changes across chunks, so a breakpoint here is
+    # a cache hit on EVERY chunk — independent of the schema churn that keeps the
+    # snapshot cache from engaging. The static prefix (~6-8K tokens of rules,
+    # examples and vocab) is the dominant re-sent cost in the ontology stage, so
+    # caching it is the biggest single lever here. 1h TTL keeps it warm for the
+    # whole run.
+    system_blocks[-1]["cache_control"] = cache_control("1h")
+
     snapshot_block: dict = {
         "type": "text",
         "text": f"\n\n## Ontology snapshot\n\n```json\n{snapshot_json}\n```\n",
     }
     if use_cache:
-        # 1h TTL: once the schema is structurally stable the snapshot prefix is
-        # re-read across many chunks; keep it warm so it isn't re-written each
-        # time a gap exceeds 5 minutes.
+        # A second breakpoint on the snapshot — only engages once the schema is
+        # structurally stable (see run_ontology). The static-prefix breakpoint
+        # above pays off regardless.
         snapshot_block["cache_control"] = cache_control("1h")
     system_blocks.append(snapshot_block)
 
@@ -406,7 +460,9 @@ def build_agent(
             params={"system": system_blocks},
         ),
         system_prompt=prompt,
-        tools=[mcp_client],
+        # MCP client for write-cypher; describe_ontology to fetch a type's/edge's
+        # full_description on demand (the snapshot shows only short_descriptions).
+        tools=[mcp_client, describe_ontology],
         conversation_manager=SlidingWindowConversationManager(
             window_size=6,
             should_truncate_results=True,

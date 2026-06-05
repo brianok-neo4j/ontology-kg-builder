@@ -165,6 +165,7 @@ The agent system prompts enforce these — maintain them in any new tools or pro
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (adds ~16s/chunk) |
 | `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Consecutive no-change chunks before enabling prompt cache (default: `3`) |
 | `ONTOLOGY_MAX_ENTITY_TYPES` | Abort the ontology run if the schema exceeds this many EntityTypes (default: `150`; flag: `--max-entity-types`). Guards against an over-fragmented schema ballooning input cost quadratically. Raise and `--resume` if the growth is genuinely expected. |
+| `ONTOLOGY_COMPACT_SNAPSHOT` | Embed the compact `short_description` (default, `1`) vs the verbose `full_description` (`0`) in the per-chunk ontology/instance/query snapshot. Both fields are always stored; this only selects which is serialized into prompts (full text is always available via the `describe_ontology` tool). |
 | `INGEST_LOG_TRACES` | Log per-call message traces in ingest metrics logs (default on; `0` to disable; flag: `--no-trace-logs`). Per-chunk sliced, so logs stay bounded. |
 
 ## Analysis documents

@@ -26,7 +26,7 @@ import json
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
-from shared.neo4j_tools import _run, read_cypher, write_cypher
+from shared.neo4j_tools import _run, describe_ontology, read_cypher, snapshot_description_field, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -40,7 +40,9 @@ conform strictly to a pre-built ontology schema.
 
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
-read it directly from this prompt for every chunk.
+read it directly from this prompt for every chunk. To stay compact it shows
+each type's/relationship's brief `description`; if you need the full definition
+to pick the right label, call `describe_ontology` with the label.
 
 ## How to work
 
@@ -103,6 +105,12 @@ At the start of each chunk you will be given:
    Pass the chunk elementId as a parameter. MERGE deduplicates on the
    matching pattern, so re-running is idempotent.
 
+   **Every node variable in a relationship MERGE must be bound by a MATCH/MERGE
+   in the same query, spelled identically.** An undefined variable does NOT
+   error — Cypher silently creates a new unlabeled "ghost" node. E.g. if you
+   `MATCH (p:Person {name: 'Andy Jassy'})`, the edge MERGE must use `p`, not
+   `person`. Check every variable before issuing the edge call.
+
 5. Use the entity's `name` field for MERGE deduplication (e.g.
    `MERGE (p:Person {name: '...'})`). Set additional properties with `SET`
    in the same statement when relevant.
@@ -131,22 +139,27 @@ _SUMMARY_INSTRUCTION = (
 
 
 def _fetch_ontology_schema_json() -> str:
-    """Read the ontology directly from Neo4j (bypassing the @tool wrapper)."""
+    """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
+
+    Embeds the compact `short_description` by default (set
+    `ONTOLOGY_COMPACT_SNAPSHOT=0` for `full_description`), under the uniform key
+    `description`. Full text is always available via the `describe_ontology` tool.
+    """
+    field = snapshot_description_field()
     entity_types = _run(
-        """
+        f"""
         MATCH (e:EntityType)
-        RETURN elementId(e) AS id,
-               e.entityLabel AS entityLabel,
-               e.description AS description
+        RETURN e.entityLabel AS entityLabel,
+               e.{field} AS description
         """
     )
     rels = _run(
-        """
+        f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
         RETURN a.entityLabel AS from_entityLabel,
                r.relLabel    AS relLabel,
                b.entityLabel AS to_entityLabel,
-               r.description AS description
+               r.{field} AS description
         """
     )
     return json.dumps(
@@ -208,10 +221,12 @@ def build_agent(
         ),
         system_prompt=prompt,
         # Direct-driver tools only: write_cypher (batched MERGEs, with
-        # transient-error retry) and read_cypher (targeted verification). The
-        # high-level create_or_merge_node / create_relationship helpers are
-        # deliberately omitted so the agent can't fall back to one-MERGE-per-call.
-        tools=[write_cypher, read_cypher],
+        # transient-error retry), read_cypher (targeted verification), and
+        # describe_ontology (full_description on demand — the schema shows only
+        # short_descriptions). The high-level create_or_merge_node /
+        # create_relationship helpers are deliberately omitted so the agent
+        # can't fall back to one-MERGE-per-call.
+        tools=[write_cypher, read_cypher, describe_ontology],
         conversation_manager=SlidingWindowConversationManager(
             window_size=6,
             should_truncate_results=True,

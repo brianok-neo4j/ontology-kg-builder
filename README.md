@@ -10,6 +10,7 @@ graph-aware Cypher retrieval.
 ingest/          Three-agent pipeline: ontology schema → enhance → instance data
 query/           Cypher QA agent: natural-language questions over the graph
 shared/          Document loading, Neo4j driver wrapper, Anthropic model adapter
+eval/            A/B model harness for the instance and query phases (+ LLM judge)
 analysis/        Assessment reports and ontology reference documents
 ```
 
@@ -19,10 +20,24 @@ Three subcommands run in sequence, sharing Neo4j as their only state:
 
 **Agent 1 — Ontology** (`ingest/agents/ontology_agent.py`)
 Reads document chunks and writes a schema-level ontology to Neo4j using
-`EntityType` nodes and `RelType` edges. The current schema is embedded in a
-system prompt; the agent is rebuilt only when the schema *structure* changes
-(a new `EntityType` or `RelType`, not a reworded description), its conversation
-is reset each chunk, and the schema prefix is prompt-cached once it stabilises.
+`EntityType` nodes and `RelType` edges. Entity types must be **categories**
+(`Plan`, `Obligation`, `Notice`) — never instance-level labels
+(`EvacuationPlan`); the specific names belong in the instance layer. The current
+schema is embedded in the system prompt with two cache breakpoints — one on the
+static prompt prefix (a cache hit every chunk) and one on the schema snapshot
+(engages once the structure stabilises); the agent is rebuilt only on a
+*structural* change (new label/edge, not a reworded description) and its
+conversation is reset each chunk. To keep the per-chunk prompt small the snapshot
+embeds each type's `short_description` (full text on demand via the
+`describe_ontology` tool; toggle with `ONTOLOGY_COMPACT_SNAPSHOT`). A safety cap
+(`--max-entity-types`, default 150) aborts the run if the schema balloons, since
+the embedded schema makes input cost grow quadratically with an over-fragmented
+ontology.
+
+> **Build the ontology from your most abstract document(s)** (e.g. high level documentation describing what things exist and how they relate), then
+> run the instance stage over the full corpus (e.g., laws or metadata plus procedures and specifics implementing those laws).
+> Deriving the ontology from highly detailed regulations causes the schema to
+> over-fragment.
 
 **Agent 2 — Enhancer** (`ingest/agents/enhancer_agent.py`)
 Runs once after Agent 1. Reviews the full schema and makes targeted quality
@@ -71,19 +86,23 @@ cp .env.example .env
 ### Ingest a document
 
 ```bash
-# Auto-detect document domain and run all three phases
-python ingest/main.py ontology path/to/document.pdf
+# Build the ontology from the abstract document only (keeps the schema small),
+# enhance it, then extract instances over the FULL corpus.
+python ingest/main.py ontology path/to/Act.pdf
 python ingest/main.py enhance
-python ingest/main.py instance path/to/document.pdf
+python ingest/main.py instance path/to/corpus_dir/   # Act + regulations
 
 # Explicitly specify a domain vocabulary
-python ingest/main.py ontology path/to/document.pdf --domain legal
+python ingest/main.py ontology path/to/Act.pdf --domain legal
+
+# Lower the schema-size safety cap (default 150) for tighter cost control
+python ingest/main.py ontology path/to/Act.pdf --max-entity-types 80
 
 # Ingest additional documents into an existing graph (skips ontology/enhance)
 python ingest/main.py instance path/to/regulation.html
 
 # Process instance chunks in parallel (default 5; tune to your rate limits)
-python ingest/main.py instance path/to/document.pdf --concurrency 8
+python ingest/main.py instance path/to/corpus_dir/ --concurrency 8
 
 # Resume an interrupted run (instance resume is set-based, so safe after a
 # parallel run where chunks completed out of order)
@@ -93,6 +112,34 @@ python ingest/main.py instance path/to/document.pdf --resume
 # Dry-run: first 5 chunks only
 python ingest/main.py ontology path/to/document.pdf --limit 5
 ```
+
+### Monitor an ingest run (cost & progress)
+
+`scripts/cost_watch.py` reads a run's metrics JSONL log and reports running
+cost, cache-hit rate, throughput, elapsed time, an ETA, and a projected final
+cost. The total chunk count is read automatically from the log (the run records
+it up front), so no flags are needed for progress/ETA. It is safe to run against
+a log that is still being written (it skips a partially-flushed trailing line),
+and works for **any** ingest stage — `ontology`, `enhance`, or `instance` —
+since they share the same log format. Defaults to the newest log in
+`ingest/logs/`.
+
+```bash
+# Snapshot of the newest run (total chunks read from the log)
+python scripts/cost_watch.py
+
+# Live dashboard, refreshing every 10s
+python scripts/cost_watch.py --watch
+
+# A specific stage's log (e.g. the ontology run)
+python scripts/cost_watch.py ingest/logs/<run_id>_metrics.jsonl
+
+# Override the total (e.g. a --limit/--resume run, or to project a partial log)
+python scripts/cost_watch.py --total-chunks 451
+```
+
+(`python ingest/main.py cost <log>` gives the same cost totals as a one-shot,
+without the live progress/ETA view.)
 
 ### Ask questions
 
@@ -139,9 +186,12 @@ new ones as `SUBCLASS_OF` a preferred type.
 | `NEO4J_DATABASE` | Named database (optional, defaults to server default) |
 | `NEO4J_SCHEMA_SAMPLE_SIZE` | Schema sample size for mcp-neo4j-cypher (default: 1000) |
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (slower) |
-| `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Chunks with no schema change before enabling prompt cache (default: 3) |
+| `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Chunks with no schema change before caching the snapshot block (default: 3) |
+| `ONTOLOGY_MAX_ENTITY_TYPES` | Abort the ontology run if the schema exceeds this many EntityTypes (default: 150; flag: `--max-entity-types`). Guards against quadratic cost blow-up from an over-fragmented schema; raise and `--resume` if the growth is expected |
+| `ONTOLOGY_COMPACT_SNAPSHOT` | Embed the compact `short_description` (`1`, default) vs verbose `full_description` (`0`) in per-chunk snapshots. Both are always stored; full text is always available via `describe_ontology` |
 | `INSTANCE_CONCURRENCY` | Default parallel workers for the instance stage (default: 5; overridden by `--concurrency`) |
 | `ANTHROPIC_CACHE_TTL` | Prompt-cache TTL for the schema prefix: `5m` or `1h`. Ingest defaults to `1h`, the query agent to `5m` |
+| `INGEST_LOG_TRACES` | Log per-call message traces in ingest metrics logs (default on; `0` to disable; flag: `--no-trace-logs`) |
 
 ## Graph model
 
@@ -160,3 +210,9 @@ Instance layer (labelled nodes + typed edges):
 The ontology and instance layers are structurally separate — ontology nodes
 carry the `EntityType` label, instance nodes carry the domain label directly
 (e.g. `Obligation`, `Role`).
+
+Each `EntityType` node and `RelType` edge carries two description fields: a
+`short_description` (a ≤12-word phrase, embedded in per-chunk prompts) and a
+`full_description` (the complete definition, fetched on demand via
+`describe_ontology`). Instance relationships may carry a `detail` property
+capturing what specifically is required/governed/etc.
