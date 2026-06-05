@@ -119,7 +119,7 @@ def analyze(path: Path, total_chunks: int | None) -> str:
         u = r.get("usage")
         if not u:
             continue
-        if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+        if ev in ("ontology_chunk", "instance_chunk", "enhancer", "query_question", "judge"):
             chunk_events += 1
         c = 0.0
         for src, dst in USAGE_KEYS.items():
