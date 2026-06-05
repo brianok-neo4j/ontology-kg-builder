@@ -34,8 +34,8 @@ embeds each type's `short_description` (full text on demand via the
 the embedded schema makes input cost grow quadratically with an over-fragmented
 ontology.
 
-> **Build the ontology from your most abstract document(s)** (e.g. an Act), then
-> run the instance stage over the full corpus (Act + detailed regulations).
+> **Build the ontology from your most abstract document(s)** (e.g. high level documentation describing what things exist and how they relate), then
+> run the instance stage over the full corpus (e.g., laws or metadata plus procedures and specifics implementing those laws).
 > Deriving the ontology from highly detailed regulations causes the schema to
 > over-fragment.
 
@@ -112,6 +112,29 @@ python ingest/main.py instance path/to/document.pdf --resume
 # Dry-run: first 5 chunks only
 python ingest/main.py ontology path/to/document.pdf --limit 5
 ```
+
+### Monitor an ingest run (cost & progress)
+
+`scripts/cost_watch.py` reads a run's metrics JSONL log and reports running
+cost, cache-hit rate, throughput, elapsed time, and — given the chunk count — an
+ETA and projected final cost. It is safe to run against a log that is still
+being written (it skips a partially-flushed trailing line), and works for
+**any** ingest stage — `ontology`, `enhance`, or `instance` — since they share
+the same log format. Defaults to the newest log in `ingest/logs/`.
+
+```bash
+# Snapshot of the newest run, projected to a known chunk count
+python scripts/cost_watch.py --total-chunks 451
+
+# Live dashboard, refreshing every 10s
+python scripts/cost_watch.py --watch --total-chunks 451
+
+# A specific stage's log (e.g. the ontology run)
+python scripts/cost_watch.py ingest/logs/<run_id>_metrics.jsonl
+```
+
+(`python ingest/main.py cost <log>` gives the same cost totals as a one-shot,
+without the live progress/ETA view.)
 
 ### Ask questions
 
