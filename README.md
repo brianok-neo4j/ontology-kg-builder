@@ -62,6 +62,14 @@ Cypher → execute → summarise. The schema is embedded in a cached system
 prompt at agent build time; `get_ontology_schema` is available as a tool
 to refresh it mid-session without restarting.
 
+### Evaluation (`eval/`)
+
+An A/B model harness for the instance and query phases, with an optional LLM
+judge that grades answers (Excellent / Good / Partial / Weak) against the source
+document, the web, and its own knowledge. See [eval/README.md](eval/README.md)
+for the available evaluation methods, the question set, the judge rubric, and
+how per-question cost/grades are reported.
+
 ## Setup
 
 Requires Python ≥ 3.11. Recommended: Python 3.14 via Homebrew.
