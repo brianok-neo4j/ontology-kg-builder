@@ -116,21 +116,26 @@ python ingest/main.py ontology path/to/document.pdf --limit 5
 ### Monitor an ingest run (cost & progress)
 
 `scripts/cost_watch.py` reads a run's metrics JSONL log and reports running
-cost, cache-hit rate, throughput, elapsed time, and — given the chunk count — an
-ETA and projected final cost. It is safe to run against a log that is still
-being written (it skips a partially-flushed trailing line), and works for
-**any** ingest stage — `ontology`, `enhance`, or `instance` — since they share
-the same log format. Defaults to the newest log in `ingest/logs/`.
+cost, cache-hit rate, throughput, elapsed time, an ETA, and a projected final
+cost. The total chunk count is read automatically from the log (the run records
+it up front), so no flags are needed for progress/ETA. It is safe to run against
+a log that is still being written (it skips a partially-flushed trailing line),
+and works for **any** ingest stage — `ontology`, `enhance`, or `instance` —
+since they share the same log format. Defaults to the newest log in
+`ingest/logs/`.
 
 ```bash
-# Snapshot of the newest run, projected to a known chunk count
-python scripts/cost_watch.py --total-chunks 451
+# Snapshot of the newest run (total chunks read from the log)
+python scripts/cost_watch.py
 
 # Live dashboard, refreshing every 10s
-python scripts/cost_watch.py --watch --total-chunks 451
+python scripts/cost_watch.py --watch
 
 # A specific stage's log (e.g. the ontology run)
 python scripts/cost_watch.py ingest/logs/<run_id>_metrics.jsonl
+
+# Override the total (e.g. a --limit/--resume run, or to project a partial log)
+python scripts/cost_watch.py --total-chunks 451
 ```
 
 (`python ingest/main.py cost <log>` gives the same cost totals as a one-shot,

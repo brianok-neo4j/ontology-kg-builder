@@ -82,12 +82,20 @@ def analyze(path: Path, total_chunks: int | None) -> str:
         return f"{path.name}: no parseable records yet."
 
     model_id = command = run_id = None
+    logged_total = None
     for r in records:
         if r.get("event") == "run_start":
             model_id = r.get("model_id")
             command = r.get("command")
             run_id = r.get("run_id")
+            # The ingest run records the chunk count up front (load_documents),
+            # so we can show progress/ETA without the caller supplying it. An
+            # explicit --total-chunks still wins (e.g. a --limit/--resume run).
+            logged_total = r.get("chunk_count")
             break
+
+    if total_chunks is None:
+        total_chunks = logged_total
 
     pricing = PRICING.get(model_id or "")
     if not pricing:
@@ -136,7 +144,7 @@ def analyze(path: Path, total_chunks: int | None) -> str:
     done_str = f"{chunk_events} chunks"
     if total_chunks:
         done_str += f" / {total_chunks} ({chunk_events / total_chunks * 100:.0f}%)"
-    lines.append(f"Completed  : {done_str}   errors: {errors}")
+    lines.append(f"Chunks done: {done_str}   errors: {errors}")
 
     if first_ts and last_ts and last_ts > first_ts:
         # Elapsed: from the first record to NOW for an in-progress run (last_ts
@@ -186,7 +194,9 @@ def main() -> int:
     ap.add_argument("log_file", nargs="?", help="Path to *_metrics.jsonl (default: newest in ingest/logs)")
     ap.add_argument("--watch", action="store_true", help="Refresh continuously")
     ap.add_argument("--interval", type=float, default=10.0, help="Watch refresh seconds (default 10)")
-    ap.add_argument("--total-chunks", type=int, default=None, help="Total chunks for cost projection")
+    ap.add_argument("--total-chunks", type=int, default=None,
+                    help="Override total chunks for ETA/projection "
+                         "(default: read from the log's run_start chunk_count)")
     args = ap.parse_args()
 
     if args.log_file:
