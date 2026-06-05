@@ -25,7 +25,9 @@ from __future__ import annotations
 import json
 
 from strands import Agent
+from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 
 from shared.neo4j_tools import _run, find_entities_by_name
 from ingest.tools import get_ontology_schema
@@ -116,22 +118,42 @@ def _fetch_ontology_schema_json() -> str:
     )
 
 
-def build_agent() -> Agent:
+def build_agent(model_id: str | None = None) -> Agent:
+    """Build the query agent.
+
+    Args:
+        model_id: Anthropic model to use. Defaults to module-level MODEL_ID.
+                  Parameterised so the A/B harness (eval/) can compare models.
+    """
     schema_json = _fetch_ontology_schema_json()
     system_blocks = [
         {"type": "text", "text": BASE_SYSTEM_PROMPT},
         {
             "type": "text",
             "text": f"\n\n## Ontology schema (cached)\n\n```json\n{schema_json}\n```\n",
-            "cache_control": {"type": "ephemeral"},
+            # 5m default: a single-shot CLI question exits before any reuse, so
+            # the cheaper short-TTL write is right. A long REPL session can opt
+            # into 1h via ANTHROPIC_CACHE_TTL=1h.
+            "cache_control": cache_control(),
         },
     ]
     return Agent(
         model=AnthropicModel(
-            model_id=MODEL_ID,
+            model_id=model_id or MODEL_ID,
             max_tokens=MODEL_MAX_TOKENS,
             params={"system": system_blocks},
         ),
         system_prompt=BASE_SYSTEM_PROMPT,
         tools=[find_entities_by_name, run_read_cypher, get_ontology_schema],
+        # Bound the conversation so a long REPL session doesn't grow unboundedly
+        # (each question would otherwise re-send the whole prior session as
+        # input every cycle). window_size=40 is well above the worst observed
+        # single question (~13 cycles ≈ 27 messages), so it never truncates a
+        # multi-hop question mid-flight, while still capping cross-question
+        # growth and preserving recent context for follow-ups. should_truncate_
+        # results trims oversized tool results before dropping messages.
+        conversation_manager=SlidingWindowConversationManager(
+            window_size=40,
+            should_truncate_results=True,
+        ),
     )

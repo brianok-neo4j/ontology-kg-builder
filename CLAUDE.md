@@ -4,10 +4,10 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Setup
 
-Python 3.14 is required (Homebrew: `/opt/homebrew/opt/python@3.14/bin/python3.14`). Always create the venv with the explicit path to avoid version mismatches:
+Python 3.11+ is required (matches `requires-python` in `pyproject.toml`; no dependency or code feature needs anything newer). 3.14 is what the pilot was developed and tested on and is recommended. Create the venv with an explicit interpreter path to avoid version mismatches, e.g. with Homebrew's 3.14:
 
 ```bash
-/opt/homebrew/opt/python@3.14/bin/python3.14 -m venv .venv
+/opt/homebrew/opt/python@3.14/bin/python3.14 -m venv .venv   # or any python3.11+
 source .venv/bin/activate
 pip install -e .
 pip install mcp-neo4j-cypher --no-deps   # avoid mcp version downgrade
@@ -18,11 +18,14 @@ Credentials go in `.env` at the repo root (see `.env.example`). Both `ingest/mai
 
 ## Running
 
+**Build the ontology from the higher-level / abstract document(s) only** (e.g. an Act), then run the instance stage over the full corpus (Act + detailed regulations). Deriving the ontology from highly detailed regulations causes severe over-fragmentation — the agent turns specific provisions into entity *types* (`EvacuationPlan`, `AirConditioningRequirement`) instead of instances of categories (`Plan`, `Obligation`), exploding the schema and, because the schema is embedded in every chunk's prompt, ballooning cost quadratically. The detailed specifics belong in the instance layer, not the type layer.
+
 ```bash
-# Ingest pipeline — run in sequence
-python ingest/main.py ontology path/to/document.pdf
+# Ontology from the abstract document only (keeps the schema small, ~20-50 types):
+python ingest/main.py ontology path/to/Act.pdf
 python ingest/main.py enhance
-python ingest/main.py instance path/to/document.pdf
+# Instance extraction over the FULL corpus (Act + regulations):
+python ingest/main.py instance path/to/corpus_dir/ --concurrency 8   # parallel chunks (default 5)
 
 # Add documents to an existing graph (skip ontology/enhance)
 python ingest/main.py instance path/to/extra_document.html
@@ -84,9 +87,9 @@ The layers never reference each other directly. Ontology nodes carry the `Entity
 
 **Agent 2 (enhancer):** Single-shot run over the full schema. Deduplicates equivalent EntityTypes, consolidates overly granular types, adds `SUBCLASS_OF` hierarchies, generalises jurisdiction-specific labels. Uses `SlidingWindowConversationManager(window_size=8)`.
 
-**Agent 3 (instance):** Single agent built once; schema embedded in cached system prompt for the whole run. Writes instance nodes via `MERGE` on `name` — idempotent. Adds `detail` property on relationships to capture specifics. At most 2 `write-cypher` calls per chunk.
+**Agent 3 (instance):** Chunks are processed **concurrently** (a thread pool, `--concurrency`/`$INSTANCE_CONCURRENCY`, default 5) since they are independent and every write is an idempotent `MERGE` on `name`. Each worker builds its own agent and resets its conversation per chunk; all workers share one identical cached schema prefix (written once, read by the rest) and the process-wide Neo4j driver. Unlike the ontology/enhancer agents, the instance agent writes through a **direct-driver `write_cypher` tool** (not the MCP server) so that deadlocks/transient lock errors from concurrent writes are retried with exponential backoff inside `shared/neo4j_tools._run_write`. Before the run, `_ensure_instance_name_indexes()` creates a uniqueness constraint on `name` for every instance label so each `MERGE` is an index seek, not a label scan. At most 2 `write_cypher` calls per chunk. `--resume` is set-based (skips the set of completed `chunk_num`s) because parallel workers finish out of order.
 
-All three agents use `claude-sonnet-4-6` and `SlidingWindowConversationManager(window_size=6, should_truncate_results=True)` (enhancer uses window_size=8).
+All agents use `claude-sonnet-4-6`. The ontology/enhancer/instance-worker agents use `SlidingWindowConversationManager(window_size=6, should_truncate_results=True)` (enhancer uses window_size=8); the instance agent additionally resets its conversation each chunk.
 
 ### Query agent detail
 
@@ -106,11 +109,19 @@ No fixed token/character chunk size — chunks are semantic sections as the docu
 
 ### MCPClient lifecycle
 
-The `MCPClient` must **not** be started via `with` before passing to the Agent — the Agent manages its lifecycle. Pass the `MCPClient` object directly in `tools=[..., mcp_client]`.
+Applies to the ontology and enhancer agents, which still use `mcp-neo4j-cypher`. (The instance agent no longer uses MCP — it writes via the direct-driver `write_cypher` tool so it can run in concurrent threads and retry deadlocks.) The `MCPClient` must **not** be started via `with` before passing to the Agent — the Agent manages its lifecycle. Pass the `MCPClient` object directly in `tools=[..., mcp_client]`.
 
 ### Prompt caching (strands gotcha)
 
 `Agent(system_prompt=[SystemContentBlock(...)])` is silently a no-op for caching in Strands. Route cache-controlled system blocks through `AnthropicModel(params={"system": [...]})` instead — `params` is spread after the string `system` field in `format_request` and overrides it. See `shared/strands_anthropic.py` for the cache token count fix.
+
+This caching path fails **silently** (no error, just full-price input) if Strands' internals change. Guard it with the cache-health smoke test, which makes two tiny API calls and asserts the prefix is written then re-read:
+
+```bash
+python -m shared.cache_check   # exit 0 = caching works (or no API key), 1 = silent regression
+```
+
+Run it after upgrading `strands`/`anthropic`, or wire it into CI.
 
 ## Domain vocabularies
 
@@ -149,8 +160,12 @@ The agent system prompts enforce these — maintain them in any new tools or pro
 | `NEO4J_PASSWORD` | Neo4j password |
 | `NEO4J_DATABASE` | Named database (optional, defaults to server default) |
 | `NEO4J_SCHEMA_SAMPLE_SIZE` | Sample size for mcp-neo4j-cypher get-schema (default: `"1000"`) |
+| `ANTHROPIC_CACHE_TTL` | Prompt-cache TTL for the cached schema prefix: `5m` or `1h`. Ingest agents default to `1h` (prefix re-read across the whole run); the query agent defaults to `5m`. Set this to override globally. |
+| `INSTANCE_CONCURRENCY` | Default number of chunks the instance stage processes in parallel (default `5`; overridden by `--concurrency`). |
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (adds ~16s/chunk) |
 | `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Consecutive no-change chunks before enabling prompt cache (default: `3`) |
+| `ONTOLOGY_MAX_ENTITY_TYPES` | Abort the ontology run if the schema exceeds this many EntityTypes (default: `150`; flag: `--max-entity-types`). Guards against an over-fragmented schema ballooning input cost quadratically. Raise and `--resume` if the growth is genuinely expected. |
+| `INGEST_LOG_TRACES` | Log per-call message traces in ingest metrics logs (default on; `0` to disable; flag: `--no-trace-logs`). Per-chunk sliced, so logs stay bounded. |
 
 ## Analysis documents
 

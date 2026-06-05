@@ -44,6 +44,7 @@ from strands.tools.mcp import MCPClient
 
 from shared.neo4j_tools import _run
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 from ingest.domain_vocab import DomainVocabulary
 
 
@@ -85,13 +86,19 @@ re-list EntityType / RelType.)
 1. Identify the types of entities present in the chunk (e.g. Person, Organization,
    Product). For each, MERGE an `EntityType` node on `entityLabel` and SET its
    `description` to a concise natural-language definition. If a description
-   already exists in the snapshot and is still accurate, leave it alone;
-   otherwise refine it.
+   already exists in the snapshot and is still accurate, **leave it alone — do
+   not MERGE the type at all.** Only re-SET a description when you are adding
+   genuinely new, distinguishing information or correcting an inaccuracy; never
+   to reword, rephrase, or lightly polish wording that is already accurate.
 
 2. Identify the types of relationships between entities. For each, MERGE a
    `RelType` edge between the relevant `EntityType` nodes on `relLabel` and SET
    its `description`. Create relationships in one direction only. Omit inverses
-   unless they convey genuinely distinct semantic meaning.
+   unless they convey genuinely distinct semantic meaning. As with EntityType
+   descriptions: if a RelType edge already exists in the snapshot with an
+   accurate description, **leave it alone — do not MERGE it again.** Only re-SET
+   a RelType description for a substantive change (new distinguishing detail or
+   a corrected inaccuracy), never to reword wording that is already accurate.
 
 3. `Document` and `Chunk` EntityType nodes already exist with a `HAS_CHUNK`
    RelType edge — and they already have descriptions. Do not recreate them or
@@ -107,6 +114,31 @@ re-list EntityType / RelType.)
 Entity labels must be **reusable across documents, jurisdictions, and contexts**.
 Before writing a label, ask: *"What category of thing is this?"* — then use that
 category, not the specific name you encountered.
+
+- **An EntityType is a CATEGORY that will have MANY instances — never one
+  specific thing. This is the most important rule.** Before creating a type,
+  ask: *"Will many distinct named things in the corpus be instances of this
+  type?"* If the label names a single specific plan/program/notice/obligation,
+  it IS an instance — use the bare category as the type and let the specific
+  name be captured later in the instance stage.
+
+  | Instance (do NOT make a type) | Correct EntityType | The specific name is an instance of it |
+  |---|---|---|
+  | `HeatIllnessPlan`, `EvacuationPlan` | `Plan` | "Heat Illness Plan", "Evacuation Plan" |
+  | `AirConditioningRequirement` | `Obligation` | "air conditioning requirement" |
+  | `BedClosureNotice`, `NoticeOfAppeal` | `Notice` | "bed closure notice" |
+  | `ConvalescentCareProgram`, `LaundryServiceProgram` | `Program` | "convalescent care program" |
+
+  **Forbidden pattern — `<Specific><Category>`.** If your proposed label is a
+  modifier glued onto a category noun (Plan, Program, Notice, Report, Agreement,
+  Requirement, Policy, Record, Order, Rule, Service, Process, Designation, List,
+  Charge, Audit, Team, …), STOP: use the bare category as the type. Specific
+  plans/programs/notices/requirements are INSTANCES, not types.
+
+  A healthy ontology for an entire statute plus its regulations has on the order
+  of **20–50 EntityTypes, not hundreds**. If you are creating many variants of
+  the same category (FooProgram, BarProgram, BazProgram), you are
+  over-fragmenting — collapse them to the category (`Program`).
 
 - **Never embed a jurisdiction, place, organization, or document name in a label.**
   | Too specific (bad) | Generalized (good) |
@@ -193,12 +225,22 @@ Apply the same generalization discipline as entity labels.
   ```
   Never: `MERGE (e:EntityType {entityLabel: 'Foo', description: '...'})`
 
-- **Use at most two write-cypher calls per chunk: one for EntityType nodes,
-  one for RelType edges.** In the second call, use MATCH (not MERGE) to
-  re-fetch the nodes before creating edges. This avoids variable-scoping
-  errors in long multi-MERGE queries. Example:
+- **Never create EntityType nodes and RelType edges in the same query.** Mixing
+  node MERGEs and edge MERGEs in one statement causes variable-scoping errors
+  and stray "ghost" nodes. Keep node writes and edge writes in separate calls.
 
-  Call 1 — all EntityType nodes:
+- **Make only the calls you actually need — at most two, often fewer:**
+  - New/updated node types AND new edges → **two calls**: nodes first, then edges.
+  - Only new edges (every node type this chunk needs already exists in the
+    snapshot) → **one call**: `MATCH` the existing nodes, then `MERGE` the edges.
+  - Only new node types (no new edges) → **one call**.
+  - Nothing new in this chunk → **no write-cypher calls at all**; just stop.
+
+  **Do NOT issue a placeholder / no-op query (e.g. `MATCH ... RETURN n LIMIT 1`)
+  to "satisfy" a two-call pattern.** If there are no new nodes, skip the node
+  call entirely and make only the edge call.
+
+  Node call (only when there are new/changed node types):
   ```
   MERGE (a:EntityType {entityLabel: 'Company'})
     SET a.description = "A business entity ..."
@@ -206,7 +248,7 @@ Apply the same generalization discipline as entity labels.
     SET b.description = "A good or service ..."
   ```
 
-  Call 2 — all RelType edges (re-fetch nodes with MATCH):
+  Edge call (re-fetch nodes with MATCH — this may be the ONLY call):
   ```
   MATCH (a:EntityType {entityLabel: 'Company'})
   MATCH (b:EntityType {entityLabel: 'Product'})
@@ -217,10 +259,6 @@ Apply the same generalization discipline as entity labels.
     SET r2.description = "links an instance entity back to the source Chunk"
   ```
 
-  Do not chain MERGE statements for nodes and edges in a single query — the
-  variable scoping rules make this error-prone. Two clean calls are better
-  than one broken one.
-
 - **Always use double-quoted strings for `description` values** (as shown
   above). Descriptions frequently contain apostrophes ("Residents' Council",
   "operator's obligations") that silently break single-quoted Cypher literals.
@@ -230,6 +268,15 @@ Apply the same generalization discipline as entity labels.
 - Every EntityType and every RelType you create or update MUST have a non-empty
   `description`. Descriptions should be specific enough that another agent
   reading only the schema can tell two similar types apart.
+
+- **Do not rewrite descriptions for cosmetic reasons.** This applies to BOTH
+  `EntityType` nodes and `RelType` edges. Only write an EntityType or RelType
+  whose label/pair is new, or whose description needs a *substantive* change
+  (new distinguishing detail or a corrected inaccuracy). Re-stating an existing
+  type or relationship with an equivalent, reworded description is wasted work —
+  skip it entirely. When the snapshot already covers a type or relationship
+  accurately, emit no MERGE for it. Prefer writing only the handful of types and
+  relationships this chunk genuinely adds or changes.
 
 - **After the write-cypher tool executes successfully, stop immediately.** Do
   not produce any closing text, confirmation, or summary — the tool result is
@@ -346,7 +393,10 @@ def build_agent(
         "text": f"\n\n## Ontology snapshot\n\n```json\n{snapshot_json}\n```\n",
     }
     if use_cache:
-        snapshot_block["cache_control"] = {"type": "ephemeral"}
+        # 1h TTL: once the schema is structurally stable the snapshot prefix is
+        # re-read across many chunks; keep it warm so it isn't re-written each
+        # time a gap exceeds 5 minutes.
+        snapshot_block["cache_control"] = cache_control("1h")
     system_blocks.append(snapshot_block)
 
     return Agent(

@@ -15,8 +15,10 @@ against an existing schema.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,8 +46,8 @@ from ingest.agents.enhancer_agent import (
 from ingest.agents.instance_agent import (
     MODEL_ID as INSTANCE_MODEL_ID,
     MODEL_MAX_TOKENS as INSTANCE_MODEL_MAX_TOKENS,
+    _fetch_ontology_schema_json as fetch_instance_schema_json,
     build_agent as build_instance_agent,
-    build_mcp_client as build_instance_mcp,
 )
 from ingest.tools import create_document_node, create_chunk_node
 from ingest.domain_vocab import (
@@ -60,6 +62,21 @@ LOG_DIR = Path(__file__).parent / "logs"
 _VERBOSE_SUMMARY_DEFAULT = os.environ.get("ONTOLOGY_VERBOSE_SUMMARY", "").lower() in (
     "1", "true", "yes"
 )
+
+# Whether to log per-call message traces (tool calls + text) on each chunk for
+# later analysis. ON by default; disable with --no-trace-logs or
+# INGEST_LOG_TRACES=0. Traces are logged PER CALL (sliced to just that chunk),
+# never the cumulative blob — see _per_call_metrics — so logs stay bounded.
+_LOG_TRACES = os.environ.get("INGEST_LOG_TRACES", "1").strip().lower() not in (
+    "0", "false", "no", "off"
+)
+
+# Safety cap on ontology size. The schema is embedded in every chunk's prompt,
+# so an unbounded schema makes input cost grow quadratically — a runaway
+# (over-fragmented schema) can cost hundreds of dollars. A healthy ontology for
+# a statute + regulations is ~20-50 EntityTypes; 150 leaves generous headroom
+# while still catching a runaway early. Override with --max-entity-types / env.
+_MAX_ENTITY_TYPES_DEFAULT = int(os.environ.get("ONTOLOGY_MAX_ENTITY_TYPES", "150"))
 
 # Per-million-token pricing. Verify against https://www.anthropic.com/pricing
 # before relying on cost estimates for budgeting.
@@ -97,19 +114,55 @@ def run_cost(log_path: str) -> None:
         print(f"Model '{model_id}' not in pricing table ({known}). Add it to _PRICING.")
         return
 
-    total_input = total_cache_write = total_cache_read = total_output = 0
+    _USAGE_KEYS = {
+        "inputTokens": "total_input",
+        "outputTokens": "total_output",
+        "cacheWriteInputTokens": "total_cache_write",
+        "cacheReadInputTokens": "total_cache_read",
+    }
+    totals = {v: 0 for v in _USAGE_KEYS.values()}
     chunk_events = errors = 0
-    for r in records:
-        u = (r.get("metrics") or {}).get("accumulated_usage", {})
-        total_input       += u.get("inputTokens", 0)
-        total_cache_write += u.get("cacheWriteInputTokens", 0)
-        total_cache_read  += u.get("cacheReadInputTokens", 0)
-        total_output      += u.get("outputTokens", 0)
-        ev = r.get("event", "")
-        if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
-            chunk_events += 1
-        if "_error" in ev:
-            errors += 1
+
+    # Current logs carry a per-call `usage` delta on each chunk record (see
+    # _per_call_metrics) — those are independent and simply summed, which is
+    # correct even when parallel workers interleave their records. Older logs
+    # instead carry cumulative `metrics.accumulated_usage`; for those, sum
+    # per-record deltas (treating a decrease as an agent rebuild) to undo the
+    # cumulative running totals.
+    per_call_format = any("usage" in r for r in records)
+
+    if per_call_format:
+        for r in records:
+            ev = r.get("event", "")
+            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+                chunk_events += 1
+            if "_error" in ev:
+                errors += 1
+            u = r.get("usage") or {}
+            for key, tot_key in _USAGE_KEYS.items():
+                totals[tot_key] += u.get(key, 0)
+    else:
+        prev = {k: 0 for k in _USAGE_KEYS}
+        for r in records:
+            ev = r.get("event", "")
+            if ev in ("ontology_chunk", "instance_chunk", "enhancer"):
+                chunk_events += 1
+            if "_error" in ev:
+                errors += 1
+            u = (r.get("metrics") or {}).get("accumulated_usage") or {}
+            if not u:
+                # run_start / run_resume / error records carry no usage — skip
+                # them so they don't reset delta tracking and double-count.
+                continue
+            for key, tot_key in _USAGE_KEYS.items():
+                cur = u.get(key, 0)
+                totals[tot_key] += cur - prev[key] if cur >= prev[key] else cur
+                prev[key] = cur
+
+    total_input       = totals["total_input"]
+    total_cache_write = totals["total_cache_write"]
+    total_cache_read  = totals["total_cache_read"]
+    total_output      = totals["total_output"]
 
     cost = (
         total_input       / 1e6 * pricing["input"]       +
@@ -132,24 +185,31 @@ def run_cost(log_path: str) -> None:
         print(f"Cost/event   :              ${cost / chunk_events:.4f}")
 
 
-def _find_resumable_run(command: str, input_path: str) -> tuple[Path | None, int, str | None]:
+def _find_resumable_run(
+    command: str, input_path: str
+) -> tuple[Path | None, int, str | None, set[int]]:
     """Find the most recent interrupted run for (command, input_path).
 
     Scans all JSONL log files for a run_start matching (command, input_path),
-    then counts successful chunk events to determine how far it got.
+    then collects the set of completed chunk numbers.
 
-    Returns (log_file, n_done, run_id), or (None, 0, None) if nothing found.
+    Returns (log_file, n_done, run_id, done_nums). `done_nums` is the set of
+    1-based chunk_num values that completed — the instance stage needs this
+    because parallel workers complete out of order, so "the first n_done chunks"
+    is not the same as "the n_done chunks that finished". The ontology stage is
+    sequential and can keep using the n_done count. Returns
+    (None, 0, None, set()) if nothing is found.
     """
     if not LOG_DIR.exists():
-        return None, 0, None
+        return None, 0, None, set()
 
     chunk_event = "ontology_chunk" if command == "ontology" else "instance_chunk"
     best_ts: str | None = None
-    best: tuple[Path, int, str] | None = None
+    best: tuple[Path, int, str, set[int]] | None = None
 
     for log_file in LOG_DIR.glob("*_metrics.jsonl"):
         matched = False
-        n_done = 0
+        done_nums: set[int] = set()
         run_id = None
         try:
             with log_file.open(encoding="utf-8") as f:
@@ -164,21 +224,23 @@ def _find_resumable_run(command: str, input_path: str) -> tuple[Path | None, int
                                 record.get("input_path") == input_path):
                             matched = True
                             run_id = record.get("run_id")
-                            n_done = 0
+                            done_nums = set()
                         else:
                             matched = False
                     elif matched and event == chunk_event:
-                        n_done += 1
+                        num = record.get("chunk_num")
+                        if num is not None:
+                            done_nums.add(num)
         except Exception:
             continue
 
         if matched and run_id:
             if best_ts is None or run_id > best_ts:
                 best_ts = run_id
-                best = (log_file, n_done, run_id)
+                best = (log_file, len(done_nums), run_id, done_nums)
 
     if best is None:
-        return None, 0, None
+        return None, 0, None, set()
     return best
 
 
@@ -193,19 +255,85 @@ def _write_resume_event(log_file: Path, n_done: int, total: int) -> None:
         f.write(json.dumps(record) + "\n")
 
 
-def _log(log_file: Path, event: str, result, **extra) -> None:
+# Serialises appends to the metrics log when instance chunks run concurrently.
+_LOG_LOCK = threading.Lock()
+
+_USAGE_FIELDS = (
+    "inputTokens", "outputTokens", "cacheWriteInputTokens", "cacheReadInputTokens",
+)
+
+
+def _per_call_metrics(agent, result) -> dict:
+    """Lean per-invocation metrics: just what *this* call cost.
+
+    Strands reports *cumulative* usage per agent and embeds an ever-growing
+    `traces` / `agent_invocations` blob in the summary. Logging that blob every
+    chunk produced multi-hundred-MB logs (a single instance run hit 543 MB), and
+    the cumulative usage is unsummable once parallel workers interleave their
+    records. We instead diff each call against a per-agent baseline (each agent
+    is only ever used by one thread) and log only the token usage, cycle count,
+    and duration for that one call — a few hundred bytes, directly summable.
+    """
     try:
         summary = result.metrics.get_summary() if result and result.metrics else {}
     except Exception:
         summary = {}
+    cum_usage = summary.get("accumulated_usage", {}) or {}
+    cum_cycles = summary.get("total_cycles", 0) or 0
+    cum_dur = summary.get("total_duration", 0.0) or 0.0
+
+    prev = getattr(agent, "_prev_cum", None) or {}
+    prev_usage = prev.get("usage", {})
+
+    usage = {}
+    for k in _USAGE_FIELDS:
+        cur = cum_usage.get(k, 0) or 0
+        p = prev_usage.get(k, 0)
+        usage[k] = cur - p if cur >= p else cur  # decrease ⇒ fresh agent
+
+    cycles = cum_cycles - prev.get("cycles", 0)
+    if cycles < 0:
+        cycles = cum_cycles
+    dur = cum_dur - prev.get("dur", 0.0)
+    if dur < 0:
+        dur = cum_dur
+
+    out = {"usage": usage, "cycles": cycles, "duration_s": round(dur, 3)}
+
+    # Per-call message traces (tool calls + text + timings), sliced to just THIS
+    # call. The agent's metrics.traces is cumulative, so we record only the new
+    # entries since the previous chunk — this keeps the message-level detail for
+    # analysis without re-logging the whole growing blob (which ballooned the
+    # instance log to 543 MB before Finding J).
+    trace_n = prev.get("trace_n", 0)
+    if _LOG_TRACES:
+        try:
+            all_traces = [t.to_dict() for t in (result.metrics.traces if result and result.metrics else [])]
+        except Exception:
+            all_traces = []
+        out["traces"] = all_traces[trace_n:]
+        trace_n = len(all_traces)
+
+    # Update the baseline on the agent (single-threaded per agent, so safe).
+    agent._prev_cum = {
+        "usage": {k: (cum_usage.get(k, 0) or 0) for k in _USAGE_FIELDS},
+        "cycles": cum_cycles,
+        "dur": cum_dur,
+        "trace_n": trace_n,
+    }
+    return out
+
+
+def _log(log_file: Path, event: str, fields: dict, **extra) -> None:
     record = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "event": event,
-        "metrics": summary,
+        **fields,
         **extra,
     }
-    with log_file.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record) + "\n")
+    line = json.dumps(record) + "\n"
+    with _LOG_LOCK, log_file.open("a", encoding="utf-8") as f:
+        f.write(line)
 
 
 def _invoke_with_recovery(
@@ -228,7 +356,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             event,
-            result,
+            _per_call_metrics(agent, result),
             history_depth_pre_call=history_depth,
             **log_extra,
         )
@@ -237,9 +365,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             f"{event}_error",
-            None,
-            error_type="MaxTokensReachedException",
-            error_message=str(exc),
+            {"error_type": "MaxTokensReachedException", "error_message": str(exc)},
             history_depth_pre_call=history_depth,
             **log_extra,
         )
@@ -249,9 +375,7 @@ def _invoke_with_recovery(
         _log(
             log_file,
             f"{event}_error",
-            None,
-            error_type=type(exc).__name__,
-            error_message=str(exc),
+            {"error_type": type(exc).__name__, "error_message": str(exc)},
             history_depth_pre_call=history_depth,
             **log_extra,
         )
@@ -307,6 +431,46 @@ def _bootstrap_ontology_base(vocab: DomainVocabulary | None = None) -> None:
             )
 
 
+def _ensure_instance_name_indexes() -> None:
+    """Create a backing index on `name` for every instance EntityType label.
+
+    Without this, each `MERGE (n:Label {name: ...})` the instance agent runs is
+    a full label scan — e.g. a single MERGE against the 1,600-node Obligation
+    label profiles at ~3,300 dbHits, and the cost grows as the label fills, so
+    the instance stage is O(n^2) in entities per label (see
+    analysis/performance_analysis.md, Finding F).
+
+    A uniqueness constraint on (label, `name`) turns each MERGE into an index
+    seek and enforces the MERGE-on-name idempotency contract the agents already
+    rely on; it also creates the backing index. Document and Chunk are skipped:
+    they are pre-created provenance nodes and Chunk has no `name`.
+
+    Idempotent (every statement uses IF NOT EXISTS), so it is safe to run on
+    every instance invocation including resumes. If a label already contains
+    duplicate names (so a uniqueness constraint cannot be created), it falls
+    back to a plain range index, which still gives MERGE an index seek.
+    """
+    labels = [
+        r["entityLabel"]
+        for r in _run("MATCH (e:EntityType) RETURN e.entityLabel AS entityLabel")
+        if r["entityLabel"] not in ("Document", "Chunk")
+    ]
+    print(f"\n=== Ensuring name indexes for {len(labels)} instance labels ===")
+    for label in labels:
+        safe = label.replace("`", "")
+        try:
+            _run(
+                f"CREATE CONSTRAINT `{safe}_name` IF NOT EXISTS "
+                f"FOR (n:`{safe}`) REQUIRE n.name IS UNIQUE"
+            )
+        except Exception as exc:  # noqa: BLE001 — existing dup names block uniqueness
+            print(f"  ! {label}: uniqueness constraint failed ({exc}); using plain index")
+            _run(
+                f"CREATE INDEX `{safe}_name_idx` IF NOT EXISTS "
+                f"FOR (n:`{safe}`) ON (n.name)"
+            )
+
+
 def _resolve_domain(domain_flag: str, chunks: list) -> DomainVocabulary | None:
     """Return the DomainVocabulary to use for this run.
 
@@ -351,6 +515,59 @@ def _open_log(command: str, **params) -> Path:
     return log_file
 
 
+def _abort_if_schema_too_large(
+    snapshot: dict, cap: int, path: str, chunks_done: int, total: int
+) -> None:
+    """Stop the ontology run if the schema has grown past `cap` EntityTypes.
+
+    The full schema is re-embedded in every chunk's prompt, so an unbounded
+    (typically over-fragmented) schema makes input cost grow quadratically. This
+    guard halts before that balloons — see analysis/performance_analysis.md and
+    the $700 runaway it was added in response to.
+    """
+    n = len(snapshot.get("entity_types", []))
+    if n <= cap:
+        return
+    print(
+        f"\n{'='*70}\n"
+        f"ABORTING ontology run: schema has {n} EntityTypes, exceeding the cap "
+        f"of {cap}.\n{'='*70}\n"
+        f"The ontology is embedded in every chunk's prompt, so a large/growing "
+        f"schema makes input cost grow QUADRATICALLY — a runaway here has cost "
+        f"hundreds of dollars. Stopping to prevent ballooning cost.\n\n"
+        f"Processed {chunks_done} of {total} chunks before stopping.\n\n"
+        f"A schema this large usually means over-fragmentation (instance-level "
+        f"labels created as types, e.g. 'EvacuationPlan' instead of 'Plan'). "
+        f"Review the schema before spending more.\n\n"
+        f"If the growth is genuinely expected, raise the cap and resume from "
+        f"where this stopped:\n"
+        f"  python ingest/main.py ontology {path!r} --resume --max-entity-types <N>\n"
+        f"  (or set ONTOLOGY_MAX_ENTITY_TYPES=<N>)\n"
+        f"{'='*70}"
+    )
+    raise SystemExit(2)
+
+
+def _ontology_structure_sig(snapshot: dict) -> tuple[frozenset, frozenset]:
+    """Structural fingerprint of an ontology snapshot, ignoring description text.
+
+    Two snapshots are structurally identical if they have the same set of
+    EntityType labels and the same set of (from, relLabel, to) RelType edges,
+    even if their `description` strings differ. Used to decide when to rebuild
+    the ontology agent: a rebuild resets the prompt cache, so description-only
+    refinements must not trigger one (see analysis/performance_analysis.md,
+    Finding B).
+    """
+    labels = frozenset(
+        e.get("entityLabel") for e in snapshot.get("entity_types", [])
+    )
+    edges = frozenset(
+        (r.get("from_entityLabel"), r.get("relLabel"), r.get("to_entityLabel"))
+        for r in snapshot.get("relationships", [])
+    )
+    return labels, edges
+
+
 def run_ontology(
     path: str,
     limit: int | None = None,
@@ -358,6 +575,7 @@ def run_ontology(
     domain: str = "auto",
     verbose_summary: bool = False,
     model_id: str | None = None,
+    max_entity_types: int = _MAX_ENTITY_TYPES_DEFAULT,
 ) -> Path:
     chunks = list(load_documents(path))
     if not chunks:
@@ -375,7 +593,7 @@ def run_ontology(
     log_file: Path | None = None
 
     if resume:
-        log_file, n_done, run_id = _find_resumable_run("ontology", str(path))
+        log_file, n_done, run_id, _ = _find_resumable_run("ontology", str(path))
         if log_file is None:
             print("No resumable run found — starting fresh.")
         elif n_done >= total:
@@ -429,6 +647,8 @@ def run_ontology(
         )
 
     current_snapshot = fetch_ontology_snapshot()
+    _abort_if_schema_too_large(current_snapshot, max_entity_types, str(path), n_done, total)
+    current_sig = _ontology_structure_sig(current_snapshot)
     agent = _build_agent(current_snapshot)
 
     current_doc: str | None = None
@@ -440,6 +660,12 @@ def run_ontology(
             print(f"\n--- {Path(doc).name} ({doc_chunk_count} chunks) ---")
 
         print(f"  chunk {chunk_num}/{total}...", end=" ", flush=True)
+        # Each chunk is independent: the persistent state is the ontology graph
+        # (embedded in the cached system prompt), not the prior conversation.
+        # Reset history so we don't re-send the previous chunk's text and tool
+        # results as input every chunk (Finding D). The cached system prefix is
+        # untouched, so prompt-cache reads still hit.
+        agent.messages = []
         _invoke_with_recovery(
             agent,
             (
@@ -450,7 +676,10 @@ def run_ontology(
                 "---\n"
                 "Identify the entity types and relationship types present in this chunk "
                 "and update the ontology schema accordingly. Do not create instance data. "
-                "Use at most two write-cypher calls: one for EntityType nodes, one for RelType edges."
+                "Keep node writes and edge writes in separate calls, but make only the "
+                "calls you need (one for new EntityType nodes, one for RelType edges) — "
+                "skip the node call entirely if no new types are needed, and make no "
+                "calls if the chunk adds nothing. Never write a placeholder/no-op query."
             ),
             log_file,
             "ontology_chunk",
@@ -459,17 +688,31 @@ def run_ontology(
             total_chunks=total,
         )
 
+        # Rebuild the agent only when the schema *structure* changes (a new
+        # EntityType label or a new (from, relLabel, to) edge) — NOT when the
+        # agent merely refines a description. A rebuild re-embeds the snapshot
+        # and resets the prompt cache, so rebuilding on every description tweak
+        # kept the cache from ever engaging (see analysis/performance_analysis.md,
+        # Finding B). Description-only changes leave the structure stable, so the
+        # streak keeps counting toward cache activation.
         new_snapshot = fetch_ontology_snapshot()
-        if new_snapshot != current_snapshot:
+        _abort_if_schema_too_large(new_snapshot, max_entity_types, str(path), chunk_num, total)
+        new_sig = _ontology_structure_sig(new_snapshot)
+        if new_sig != current_sig:
+            current_sig = new_sig
             current_snapshot = new_snapshot
             no_change_streak = 0
             use_cache = False
             agent = _build_agent(current_snapshot)
-            print("done (+rebuilt)")
+            print("done (+rebuilt: structure changed)")
         else:
             no_change_streak += 1
             if no_change_streak == stability_threshold and not use_cache:
                 use_cache = True
+                # Refresh to the latest descriptions for the now-cached build;
+                # the structure is unchanged so this is the last rebuild until
+                # a genuine structural change occurs.
+                current_snapshot = new_snapshot
                 agent = _build_agent(current_snapshot)
                 print(f"done (cache enabled, streak={no_change_streak})")
             else:
@@ -518,6 +761,7 @@ def run_instance(
     resume: bool = False,
     verbose_summary: bool = False,
     model_id: str | None = None,
+    concurrency: int = 5,
 ) -> Path:
     chunks = list(load_documents(path))
     if not chunks:
@@ -530,17 +774,20 @@ def run_instance(
     docs = sorted({doc for doc, _, _ in chunks})
 
     n_done = 0
+    done_nums: set[int] = set()
     log_file: Path | None = None
 
     if resume:
-        log_file, n_done, run_id = _find_resumable_run("instance", str(path))
+        log_file, n_done, run_id, done_nums = _find_resumable_run("instance", str(path))
         if log_file is None:
             print("No resumable run found — starting fresh.")
         elif n_done >= total:
             print(f"All {total} chunks already completed in {log_file.name}. Nothing to do.")
             return log_file
         else:
-            print(f"Resuming {run_id}: skipping {n_done}/{total} already-processed chunks.")
+            # Parallel workers finish out of order, so skip the SET of completed
+            # chunk numbers, not just the first n_done.
+            print(f"Resuming {run_id}: skipping {n_done}/{total} already-completed chunks.")
             _write_resume_event(log_file, n_done, total)
 
     effective_model = model_id or INSTANCE_MODEL_ID
@@ -566,24 +813,55 @@ def run_instance(
             print(f"  Document: {Path(doc).name}")
         chunk_ids[(doc, idx)] = create_chunk_node(doc_ids[doc], idx, chunk)
 
-    print("\n=== Populating instance data ===")
+    _ensure_instance_name_indexes()
+
+    # Chunks are independent and every write is an idempotent MERGE, so they can
+    # be processed concurrently. Each worker thread builds its own agent lazily
+    # and reuses it (resetting the conversation per chunk so independent chunks
+    # don't share context). All workers share one identical cached schema prefix
+    # — so the prompt cache is written once and read by the rest — and the
+    # process-wide Neo4j driver. Write contention (two workers MERGEing the same
+    # name) is handled by the exponential-backoff retry in `write_cypher`.
+    concurrency = max(1, concurrency)
+    # (global_index, chunk) for every chunk whose 1-based number isn't already
+    # done. Filtering by the done-set (not chunks[n_done:]) is what makes resume
+    # correct under out-of-order parallel completion.
+    remaining = [
+        (gi, ch) for gi, ch in enumerate(chunks) if (gi + 1) not in done_nums
+    ]
+    n_remaining = len(remaining)
+    print(f"\n=== Populating instance data ({concurrency} worker(s), "
+          f"{n_remaining} chunks) ===")
     if n_done:
-        print(f"(skipping first {n_done} chunks already processed)")
-    mcp = build_instance_mcp()
-    agent = build_instance_agent(
-        mcp, verbose_summary=verbose_summary, model_id=effective_model
-    )
+        print(f"(skipping {n_done} already-completed chunks)")
 
-    current_doc: str | None = None
-    for i, (doc, chunk, idx) in enumerate(chunks[n_done:]):
-        chunk_num = n_done + i + 1
-        if doc != current_doc:
-            current_doc = doc
-            doc_chunk_count = sum(1 for c in chunks if c[0] == doc)
-            print(f"\n--- {Path(doc).name} ({doc_chunk_count} chunks) ---")
+    # One agent per worker thread, built on first use and reused thereafter.
+    schema_json = fetch_instance_schema_json()
+    worker_local = threading.local()
 
+    def _worker_agent():
+        agent = getattr(worker_local, "agent", None)
+        if agent is None:
+            agent = build_instance_agent(
+                verbose_summary=verbose_summary,
+                model_id=effective_model,
+                schema_json=schema_json,
+            )
+            worker_local.agent = agent
+        return agent
+
+    progress = {"done": 0}
+    progress_lock = threading.Lock()
+
+    def _process_chunk(item) -> None:
+        gi, (doc, chunk, idx) = item
+        chunk_num = gi + 1
         chunk_id = chunk_ids[(doc, idx)]
-        print(f"  chunk {chunk_num}/{total}...", end=" ", flush=True)
+        agent = _worker_agent()
+        # Independent chunk: start from a clean conversation (Finding D) so we
+        # don't carry the previous chunk's text/tool results as input. The
+        # cached system prefix (schema) is unchanged, so the prompt cache hits.
+        agent.messages = []
         _invoke_with_recovery(
             agent,
             (
@@ -594,8 +872,9 @@ def run_instance(
                 "---\n"
                 "Using the ontology schema provided in your system prompt, extract "
                 "instance entities and relationships from this chunk. Connect every entity "
-                "to the Chunk node via FROM_CHUNK. "
-                "Batch all of this chunk's MERGEs into a single write_neo4j_cypher call."
+                "to the Chunk node via FROM_CHUNK. Keep node writes and edge writes in "
+                "separate write_cypher calls (nodes first, then relationships), but make "
+                "only the calls you need — never a placeholder/no-op query."
             ),
             log_file,
             "instance_chunk",
@@ -604,9 +883,24 @@ def run_instance(
             total_chunks=total,
             chunk_id=chunk_id,
         )
-        print("done")
+        with progress_lock:
+            progress["done"] += 1
+            print(f"  [{progress['done']}/{n_remaining}] chunk {chunk_num} "
+                  f"({Path(doc).name}) done")
+
+    if concurrency == 1:
+        for item in remaining:
+            _process_chunk(item)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as pool:
+            # Surface any unexpected (non-recovered) worker exception.
+            for fut in concurrent.futures.as_completed(
+                pool.submit(_process_chunk, item) for item in remaining
+            ):
+                fut.result()
 
     print(f"\nDone. Metrics logged to {log_file}")
+    return log_file
 
 
 if __name__ == "__main__":
@@ -657,6 +951,25 @@ if __name__ == "__main__":
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {ONTOLOGY_MODEL_ID}).",
     )
+    p_ontology.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log per-call message traces (tool calls + text) for later analysis. "
+             "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
+    )
+    p_ontology.add_argument(
+        "--max-entity-types",
+        type=int,
+        default=_MAX_ENTITY_TYPES_DEFAULT,
+        metavar="N",
+        help=(
+            f"Abort the ontology run if the schema exceeds N EntityTypes "
+            f"(default: {_MAX_ENTITY_TYPES_DEFAULT}, or $ONTOLOGY_MAX_ENTITY_TYPES). "
+            "Guards against an over-fragmented schema ballooning input cost "
+            "quadratically. Resume with a higher value via --resume."
+        ),
+    )
 
     p_enhance = subparsers.add_parser(
         "enhance",
@@ -667,6 +980,12 @@ if __name__ == "__main__":
         default=None,
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {ENHANCER_MODEL_ID}).",
+    )
+    p_enhance.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log message traces for later analysis. On by default; --no-trace-logs to disable.",
     )
 
     p_instance = subparsers.add_parser(
@@ -700,6 +1019,25 @@ if __name__ == "__main__":
         metavar="MODEL_ID",
         help=f"Anthropic model to use (default: {INSTANCE_MODEL_ID}).",
     )
+    p_instance.add_argument(
+        "--concurrency",
+        type=int,
+        default=int(os.environ.get("INSTANCE_CONCURRENCY", "5")),
+        metavar="N",
+        help=(
+            "Number of chunks to process in parallel (default: 5, or "
+            "$INSTANCE_CONCURRENCY). Use 1 for fully sequential. Higher values "
+            "cut wall time but increase write contention and Anthropic rate-limit "
+            "pressure."
+        ),
+    )
+    p_instance.add_argument(
+        "--trace-logs",
+        action=argparse.BooleanOptionalAction,
+        default=_LOG_TRACES,
+        help="Log per-call message traces (tool calls + text) for later analysis. "
+             "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
+    )
 
     p_cost = subparsers.add_parser(
         "cost",
@@ -709,6 +1047,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Apply the trace-logging toggle (ontology/enhance/instance carry the flag;
+    # cost does not). Read by _per_call_metrics via the module global.
+    _LOG_TRACES = getattr(args, "trace_logs", _LOG_TRACES)
+
     if args.command == "ontology":
         run_ontology(
             args.path,
@@ -717,6 +1059,7 @@ if __name__ == "__main__":
             domain=args.domain,
             verbose_summary=args.verbose_summary,
             model_id=args.model,
+            max_entity_types=args.max_entity_types,
         )
     elif args.command == "enhance":
         run_enhance(model_id=args.model)
@@ -727,6 +1070,7 @@ if __name__ == "__main__":
             resume=args.resume,
             verbose_summary=args.verbose_summary,
             model_id=args.model,
+            concurrency=args.concurrency,
         )
     elif args.command == "cost":
         run_cost(args.log_file)

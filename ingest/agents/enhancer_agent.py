@@ -42,6 +42,7 @@ from strands.tools.mcp import MCPClient
 
 from shared.neo4j_tools import _run
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
+from shared.strands_anthropic import cache_control
 
 
 MODEL_ID = "claude-sonnet-4-6"
@@ -250,7 +251,8 @@ def build_agent(
         {
             "type": "text",
             "text": f"\n\n## Ontology snapshot (cached)\n\n```json\n{snapshot_json}\n```\n",
-            "cache_control": {"type": "ephemeral"},
+            # Single extended run, snapshot re-read across many cycles → 1h TTL.
+            "cache_control": cache_control("1h"),
         },
     ]
 
