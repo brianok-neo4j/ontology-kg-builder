@@ -411,14 +411,23 @@ def build_agent(
     if vocab:
         system_blocks.append({"type": "text", "text": _format_vocab_section(vocab)})
 
+    # Cache breakpoint on the STATIC prefix (base prompt + vocab). Unlike the
+    # snapshot, this prefix never changes across chunks, so a breakpoint here is
+    # a cache hit on EVERY chunk — independent of the schema churn that keeps the
+    # snapshot cache from engaging. The static prefix (~6-8K tokens of rules,
+    # examples and vocab) is the dominant re-sent cost in the ontology stage, so
+    # caching it is the biggest single lever here. 1h TTL keeps it warm for the
+    # whole run.
+    system_blocks[-1]["cache_control"] = cache_control("1h")
+
     snapshot_block: dict = {
         "type": "text",
         "text": f"\n\n## Ontology snapshot\n\n```json\n{snapshot_json}\n```\n",
     }
     if use_cache:
-        # 1h TTL: once the schema is structurally stable the snapshot prefix is
-        # re-read across many chunks; keep it warm so it isn't re-written each
-        # time a gap exceeds 5 minutes.
+        # A second breakpoint on the snapshot — only engages once the schema is
+        # structurally stable (see run_ontology). The static-prefix breakpoint
+        # above pays off regardless.
         snapshot_block["cache_control"] = cache_control("1h")
     system_blocks.append(snapshot_block)
 
