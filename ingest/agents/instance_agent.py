@@ -50,6 +50,23 @@ At the start of each chunk you will be given:
 - The chunk text
 - The elementId of the Chunk node for this chunk
 
+## Your goal: thorough, grounded extraction
+
+A single chunk usually contains MANY entities and relationships — often a dozen
+or more of each. Capture ALL of them, not just the headline ones:
+
+- Extract EVERY thing that matches an ontology type — the primary subject AND
+  every secondary one: roles named in passing, referenced documents/instruments,
+  obligations, processes, conditions, criteria, sanctions, rights, etc.
+- Capture EVERY relationship the chunk text supports between those entities —
+  including multiple edges per entity and edges that chain them together.
+- Err toward completeness (recall): if something in the text plausibly fits an
+  ontology type or relationship, extract it.
+
+The ONLY limit is grounding: extract only what the chunk text actually supports.
+Never invent an entity or relationship to seem thorough — an unsupported edge is
+worse than a missing one. Within that bound, be exhaustive.
+
 ## Rules
 
 1. Only create entities whose label appears as `entityLabel` on an EntityType node
@@ -76,8 +93,11 @@ At the start of each chunk you will be given:
 
 4. **Never create nodes and relationships in the same query** — mixing node
    MERGEs and relationship MERGEs in one statement causes variable-scoping
-   errors and stray "ghost" nodes. Keep node writes and edge writes separate,
-   and make only the calls you need (at most two):
+   errors and stray "ghost" nodes. Keep node writes and edge writes separate.
+   This is about call STRUCTURE, not volume — batch ALL of a chunk's node MERGEs
+   into the single node call and ALL its edge MERGEs into the single edge call
+   (a chunk with 15 entities = one node call containing 15 MERGEs). At most two
+   calls per chunk:
    - New entities AND relationships (the usual case) → **two calls**: nodes
      first, then relationships.
    - Only relationships to entities that already exist → **one call**: MATCH
