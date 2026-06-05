@@ -9,3 +9,4 @@ logs/
 *.jsonl
 eval/results/
 .DS_Store
+.claude/
