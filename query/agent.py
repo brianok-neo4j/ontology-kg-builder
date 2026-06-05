@@ -29,7 +29,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
-from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name, snapshot_description_field
+from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name
 from ingest.tools import get_ontology_schema
 from query.tools import run_read_cypher
 
@@ -49,10 +49,10 @@ Neo4j database with two layers:
 
 The full ontology schema is provided below in the section titled
 "Ontology schema (cached)". You do NOT need to call any tool to fetch it —
-read it directly from this prompt for every question. To stay compact it shows
-each type's/relationship's brief `description`; when you need the full
-definition to choose between similar labels (e.g. `GOVERNS` vs `RESTRICTS` vs
-`CONDITIONED_ON`), call `describe_ontology` with the label.
+read it directly from this prompt for every question. It includes each
+type's/relationship's full `description`, so you can distinguish similar labels
+(e.g. `GOVERNS` vs `RESTRICTS` vs `CONDITIONED_ON`) directly from the prompt;
+`describe_ontology` remains available if you want to re-confirm one.
 
 If the schema has changed since this agent was built, call `get_ontology_schema`
 to refresh it before composing your Cypher.
@@ -100,11 +100,14 @@ Never skip step 1 or step 2. If a question is genuinely schema-free
 def _fetch_ontology_schema_json() -> str:
     """Read the ontology directly from Neo4j (bypassing the @tool wrapper).
 
-    Embeds the compact `short_description` by default (set
-    `ONTOLOGY_COMPACT_SNAPSHOT=0` for `full_description`), under the uniform key
-    `description`. Full text is always available via the `describe_ontology` tool.
+    The query agent always embeds the `full_description` (under the uniform key
+    `description`), independent of the ingest-side `ONTOLOGY_COMPACT_SNAPSHOT`
+    flag. The schema is embedded once per question here — not hundreds of times
+    like the ingest per-chunk loops — so the richer text is cheap and measurably
+    improves label/edge selection (eval 2026-06-05: verbose vs compact query
+    prompt recovered ~half the grade gap to the denser prior graph).
     """
-    field = snapshot_description_field()
+    field = "full_description"
     entity_types = _run(
         f"""
         MATCH (e:EntityType)

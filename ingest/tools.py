@@ -6,24 +6,26 @@ import json
 
 from strands import tool
 
-from shared.neo4j_tools import _run, snapshot_description_field
+from shared.neo4j_tools import _run
 
 
 @tool
 def get_ontology_schema() -> str:
-    """Fetch the ontology schema from Neo4j (compact form).
+    """Fetch the ontology schema from Neo4j (full descriptions).
 
-    Returns all EntityType nodes and the RelType edges connecting them, each with
-    a `description` — the same compact (or, if ONTOLOGY_COMPACT_SNAPSHOT=0,
-    verbose) form embedded in agent prompts. For an item's full definition, use
-    the `describe_ontology` tool.
+    The query agent's mid-session schema-refresh tool: returns all EntityType
+    nodes and the RelType edges connecting them, each with its full
+    `description`. Query-facing only — it always returns full text (not gated by
+    ONTOLOGY_COMPACT_SNAPSHOT) so a refresh matches the full-description schema
+    embedded in the query prompt. The ingest per-chunk loops use their own
+    fetchers, which honour the compact flag.
 
     Returns:
         JSON with keys:
           entity_types  - list of {entityLabel, description}
           relationships - list of {from_entityLabel, relLabel, to_entityLabel, description}
     """
-    field = snapshot_description_field()
+    field = "full_description"
     entity_types = _run(
         f"""
         MATCH (e:EntityType)
