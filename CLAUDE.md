@@ -18,12 +18,14 @@ Credentials go in `.env` at the repo root (see `.env.example`). Both `ingest/mai
 
 ## Running
 
+**Build the ontology from the higher-level / abstract document(s) only** (e.g. an Act), then run the instance stage over the full corpus (Act + detailed regulations). Deriving the ontology from highly detailed regulations causes severe over-fragmentation — the agent turns specific provisions into entity *types* (`EvacuationPlan`, `AirConditioningRequirement`) instead of instances of categories (`Plan`, `Obligation`), exploding the schema and, because the schema is embedded in every chunk's prompt, ballooning cost quadratically. The detailed specifics belong in the instance layer, not the type layer.
+
 ```bash
-# Ingest pipeline — run in sequence
-python ingest/main.py ontology path/to/document.pdf
+# Ontology from the abstract document only (keeps the schema small, ~20-50 types):
+python ingest/main.py ontology path/to/Act.pdf
 python ingest/main.py enhance
-python ingest/main.py instance path/to/document.pdf
-python ingest/main.py instance path/to/document.pdf --concurrency 8   # parallel chunks (default 5)
+# Instance extraction over the FULL corpus (Act + regulations):
+python ingest/main.py instance path/to/corpus_dir/ --concurrency 8   # parallel chunks (default 5)
 
 # Add documents to an existing graph (skip ontology/enhance)
 python ingest/main.py instance path/to/extra_document.html
@@ -162,6 +164,8 @@ The agent system prompts enforce these — maintain them in any new tools or pro
 | `INSTANCE_CONCURRENCY` | Default number of chunks the instance stage processes in parallel (default `5`; overridden by `--concurrency`). |
 | `ONTOLOGY_VERBOSE_SUMMARY` | Set to `1` to have agents summarise each chunk (adds ~16s/chunk) |
 | `ONTOLOGY_CACHE_STABILITY_THRESHOLD` | Consecutive no-change chunks before enabling prompt cache (default: `3`) |
+| `ONTOLOGY_MAX_ENTITY_TYPES` | Abort the ontology run if the schema exceeds this many EntityTypes (default: `150`; flag: `--max-entity-types`). Guards against an over-fragmented schema ballooning input cost quadratically. Raise and `--resume` if the growth is genuinely expected. |
+| `INGEST_LOG_TRACES` | Log per-call message traces in ingest metrics logs (default on; `0` to disable; flag: `--no-trace-logs`). Per-chunk sliced, so logs stay bounded. |
 
 ## Analysis documents
 

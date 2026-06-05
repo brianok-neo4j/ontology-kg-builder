@@ -71,6 +71,13 @@ _LOG_TRACES = os.environ.get("INGEST_LOG_TRACES", "1").strip().lower() not in (
     "0", "false", "no", "off"
 )
 
+# Safety cap on ontology size. The schema is embedded in every chunk's prompt,
+# so an unbounded schema makes input cost grow quadratically — a runaway
+# (over-fragmented schema) can cost hundreds of dollars. A healthy ontology for
+# a statute + regulations is ~20-50 EntityTypes; 150 leaves generous headroom
+# while still catching a runaway early. Override with --max-entity-types / env.
+_MAX_ENTITY_TYPES_DEFAULT = int(os.environ.get("ONTOLOGY_MAX_ENTITY_TYPES", "150"))
+
 # Per-million-token pricing. Verify against https://www.anthropic.com/pricing
 # before relying on cost estimates for budgeting.
 _PRICING: dict[str, dict[str, float]] = {
@@ -508,6 +515,39 @@ def _open_log(command: str, **params) -> Path:
     return log_file
 
 
+def _abort_if_schema_too_large(
+    snapshot: dict, cap: int, path: str, chunks_done: int, total: int
+) -> None:
+    """Stop the ontology run if the schema has grown past `cap` EntityTypes.
+
+    The full schema is re-embedded in every chunk's prompt, so an unbounded
+    (typically over-fragmented) schema makes input cost grow quadratically. This
+    guard halts before that balloons — see analysis/performance_analysis.md and
+    the $700 runaway it was added in response to.
+    """
+    n = len(snapshot.get("entity_types", []))
+    if n <= cap:
+        return
+    print(
+        f"\n{'='*70}\n"
+        f"ABORTING ontology run: schema has {n} EntityTypes, exceeding the cap "
+        f"of {cap}.\n{'='*70}\n"
+        f"The ontology is embedded in every chunk's prompt, so a large/growing "
+        f"schema makes input cost grow QUADRATICALLY — a runaway here has cost "
+        f"hundreds of dollars. Stopping to prevent ballooning cost.\n\n"
+        f"Processed {chunks_done} of {total} chunks before stopping.\n\n"
+        f"A schema this large usually means over-fragmentation (instance-level "
+        f"labels created as types, e.g. 'EvacuationPlan' instead of 'Plan'). "
+        f"Review the schema before spending more.\n\n"
+        f"If the growth is genuinely expected, raise the cap and resume from "
+        f"where this stopped:\n"
+        f"  python ingest/main.py ontology {path!r} --resume --max-entity-types <N>\n"
+        f"  (or set ONTOLOGY_MAX_ENTITY_TYPES=<N>)\n"
+        f"{'='*70}"
+    )
+    raise SystemExit(2)
+
+
 def _ontology_structure_sig(snapshot: dict) -> tuple[frozenset, frozenset]:
     """Structural fingerprint of an ontology snapshot, ignoring description text.
 
@@ -535,6 +575,7 @@ def run_ontology(
     domain: str = "auto",
     verbose_summary: bool = False,
     model_id: str | None = None,
+    max_entity_types: int = _MAX_ENTITY_TYPES_DEFAULT,
 ) -> Path:
     chunks = list(load_documents(path))
     if not chunks:
@@ -606,6 +647,7 @@ def run_ontology(
         )
 
     current_snapshot = fetch_ontology_snapshot()
+    _abort_if_schema_too_large(current_snapshot, max_entity_types, str(path), n_done, total)
     current_sig = _ontology_structure_sig(current_snapshot)
     agent = _build_agent(current_snapshot)
 
@@ -654,6 +696,7 @@ def run_ontology(
         # Finding B). Description-only changes leave the structure stable, so the
         # streak keeps counting toward cache activation.
         new_snapshot = fetch_ontology_snapshot()
+        _abort_if_schema_too_large(new_snapshot, max_entity_types, str(path), chunk_num, total)
         new_sig = _ontology_structure_sig(new_snapshot)
         if new_sig != current_sig:
             current_sig = new_sig
@@ -915,6 +958,18 @@ if __name__ == "__main__":
         help="Log per-call message traces (tool calls + text) for later analysis. "
              "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
     )
+    p_ontology.add_argument(
+        "--max-entity-types",
+        type=int,
+        default=_MAX_ENTITY_TYPES_DEFAULT,
+        metavar="N",
+        help=(
+            f"Abort the ontology run if the schema exceeds N EntityTypes "
+            f"(default: {_MAX_ENTITY_TYPES_DEFAULT}, or $ONTOLOGY_MAX_ENTITY_TYPES). "
+            "Guards against an over-fragmented schema ballooning input cost "
+            "quadratically. Resume with a higher value via --resume."
+        ),
+    )
 
     p_enhance = subparsers.add_parser(
         "enhance",
@@ -1004,6 +1059,7 @@ if __name__ == "__main__":
             domain=args.domain,
             verbose_summary=args.verbose_summary,
             model_id=args.model,
+            max_entity_types=args.max_entity_types,
         )
     elif args.command == "enhance":
         run_enhance(model_id=args.model)

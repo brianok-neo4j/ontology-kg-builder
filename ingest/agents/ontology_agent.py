@@ -115,6 +115,31 @@ Entity labels must be **reusable across documents, jurisdictions, and contexts**
 Before writing a label, ask: *"What category of thing is this?"* — then use that
 category, not the specific name you encountered.
 
+- **An EntityType is a CATEGORY that will have MANY instances — never one
+  specific thing. This is the most important rule.** Before creating a type,
+  ask: *"Will many distinct named things in the corpus be instances of this
+  type?"* If the label names a single specific plan/program/notice/obligation,
+  it IS an instance — use the bare category as the type and let the specific
+  name be captured later in the instance stage.
+
+  | Instance (do NOT make a type) | Correct EntityType | The specific name is an instance of it |
+  |---|---|---|
+  | `HeatIllnessPlan`, `EvacuationPlan` | `Plan` | "Heat Illness Plan", "Evacuation Plan" |
+  | `AirConditioningRequirement` | `Obligation` | "air conditioning requirement" |
+  | `BedClosureNotice`, `NoticeOfAppeal` | `Notice` | "bed closure notice" |
+  | `ConvalescentCareProgram`, `LaundryServiceProgram` | `Program` | "convalescent care program" |
+
+  **Forbidden pattern — `<Specific><Category>`.** If your proposed label is a
+  modifier glued onto a category noun (Plan, Program, Notice, Report, Agreement,
+  Requirement, Policy, Record, Order, Rule, Service, Process, Designation, List,
+  Charge, Audit, Team, …), STOP: use the bare category as the type. Specific
+  plans/programs/notices/requirements are INSTANCES, not types.
+
+  A healthy ontology for an entire statute plus its regulations has on the order
+  of **20–50 EntityTypes, not hundreds**. If you are creating many variants of
+  the same category (FooProgram, BarProgram, BazProgram), you are
+  over-fragmenting — collapse them to the category (`Program`).
+
 - **Never embed a jurisdiction, place, organization, or document name in a label.**
   | Too specific (bad) | Generalized (good) |
   |---|---|
