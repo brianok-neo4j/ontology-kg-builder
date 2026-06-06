@@ -137,6 +137,34 @@ type, rather than maximally-general categories.
 
 ---
 
+## The experiment was run (2026-06-06): generalization rules *did* hurt — partly
+
+Reverted the ontology-agent `## Generalization` section to beta-era wording
+(commit `958343b`), kept `--max-entity-types 150` and everything else, full-wiped
+`4be25128`, rebuilt ontology(Act-only) → enhance → instance → eval.
+
+- **Reverted ontology = 19 types** (matches beta; *fewer* than `0.1`'s 31). So
+  the "anti-fragmentation" rules were not reducing type count — they were pushing
+  a *finer, different* carving. Enhancer added **0 `SUBCLASS_OF`** (beta-like).
+  Density 11.2 nodes/chunk, 29.6 rels/chunk (≈beta). No `Concept` type.
+- **Eval: 6E / 5G / 4P / 0W = 11 ≥Good.** The clean single-variable comparison is
+  `relaxed`(10) → `REVERTED`(11): same instance + query prompts, only the ontology
+  changed → **+1 ≥Good and +2 Excellent (4→6).** Reverting the generalization
+  rules **recovered retrieval quality** — hypothesis directionally confirmed.
+- **But it did not reach `beta` (13).** Generalization is *part* of beta's edge,
+  not all. Residual candidates: beta's `Concept` catch-all (absent here), clutter
+  from the relaxed instance prompt, or judge noise (11 vs 13 = 2 questions on N=15).
+
+**Net:** `REVERTED` (6E/5G/4P/0W, **11 ≥Good with zero Weak**) is the best *clean*
+build produced — best floor of any non-`beta` run, on a lean 19-type ontology with
+the cost cap retained. It stacks the two confirmed wins: **full query descriptions
++ reverted generalization rules.** Recommended to make both permanent (merge
+`ad9d2de` + `958343b`). Lever #2 (relaxed instance, `9b5d280`) stays ambiguous;
+untested combination worth a future run: reverted ontology + the *original*
+(non-relaxed) instance prompt, to see if dropping the clutter lifts it further.
+
+---
+
 ## Caveats
 
 - **N = 15, LLM-judge variance.** The grade *counts* (9 / 10 / 11 / 13) are
