@@ -74,6 +74,7 @@ VOCABULARIES: dict[str, DomainVocabulary] = {
             EntityTypeDef("Process", "A regulated procedure or mechanism: Inspection, Licensing, Appeal, Review, Complaint."),
             EntityTypeDef("Sanction", "A penalty, fine, remedy, or enforcement action for non-compliance."),
             EntityTypeDef("Facility", "A physical premises, institution, or establishment subject to regulation."),
+            EntityTypeDef("Concept", "A formally defined term, doctrine, or principle whose meaning is prescribed by a statute, regulation, or instrument (e.g. 'consent', 'capacity', 'good faith', 'reasonable care', 'material breach', 'least restrictive means'). Use for important defined terms and abstract notions that do not fit any of the other entity types."),
         ),
     ),
 
