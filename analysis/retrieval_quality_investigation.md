@@ -155,13 +155,38 @@ Reverted the ontology-agent `## Generalization` section to beta-era wording
   not all. Residual candidates: beta's `Concept` catch-all (absent here), clutter
   from the relaxed instance prompt, or judge noise (11 vs 13 = 2 questions on N=15).
 
-**Net:** `REVERTED` (6E/5G/4P/0W, **11 ≥Good with zero Weak**) is the best *clean*
-build produced — best floor of any non-`beta` run, on a lean 19-type ontology with
-the cost cap retained. It stacks the two confirmed wins: **full query descriptions
-+ reverted generalization rules.** Recommended to make both permanent (merge
-`ad9d2de` + `958343b`). Lever #2 (relaxed instance, `9b5d280`) stays ambiguous;
-untested combination worth a future run: reverted ontology + the *original*
-(non-relaxed) instance prompt, to see if dropping the clutter lifts it further.
+**Net (at the time):** `REVERTED` (6E/5G/4P/0W, 11 ≥Good) was the best clean build —
+**but see the next section: reverting the generalization rules turned out to be
+high-variance, and the better answer was to keep them ON and add a `Concept` type.**
+
+---
+
+## The `Concept` experiment (2026-06-06): the winner
+
+Hypothesis: the residual gap to `beta` (11 vs 13) is `beta`'s `Concept` catch-all
+type, which newer builds lacked. Added a coherent `Concept` to the `legal` seed
+vocab (*"formally defined term, doctrine, or principle… 'consent', 'capacity',
+'good faith'… for defined terms not fitting other types"*; generic, not
+FLTCA-specific).
+
+- **First attempt, on the rules-OFF base, blew up to 58 types** (over-fragmented:
+  `ALCPatient`, `TemporaryLicence`, `FamilyCouncilAssistant`…) — vs 19 the prior
+  rules-off run. **Key finding: reverting the generalization rules is
+  HIGH-VARIANCE (19 ↔ 58); the rules provide stability, and the earlier "reverted"
+  19-type win was partly luck.** Running the enhancer on it made it *worse* (62
+  types — it added abstract parents without consolidating the children).
+- **So: kept generalization rules ON + added `Concept`.** Stable **22 types**;
+  `Concept` populated to **1,279 nodes** (≈beta's 1,159 — grab-bag contents, but it
+  *helped*); density 12.1 nodes/chunk + 29.3 rels/chunk (≈beta).
+- **Eval: 7E / 6G / 2P / 0W = 13 ≥Good — matched `beta` and beat its floor**
+  (0 Weak vs beta's 1; fixed beta's one Weak, Q11 W→E). The best build of the whole
+  investigation, and on the *stable, principled* config (rules ON, cost cap intact).
+
+**Conclusion / recommended config:** **generalization rules ON + `Concept` seed +
+full query descriptions.** Three keepers to merge: `ad9d2de` (full query) +
+`213947f` (Concept seed) + **keep the rules ON** (do NOT merge the revert `958343b`
+— proven unstable). The relaxed instance prompt (`9b5d280`) was present in the
+winning build; its specific contribution to the 13 is untested.
 
 ---
 
