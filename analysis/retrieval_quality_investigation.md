@@ -190,6 +190,49 @@ winning build; its specific contribution to the 13 is untested.
 
 ---
 
+## Remaining gaps (CONCEPT vs beta): not just entity resolution
+
+> **Note:** recorded *before* the relaxed-instance isolation test (gen ON +
+> Concept + full query + *original* instance). Those findings may shift this.
+
+Compared the winning `CONCEPT` build's judge rationales to `beta`'s on every
+question where `CONCEPT` fell short of Excellent. The blockers are **mostly not
+entity resolution** — ER is now a minor contributor.
+
+| Q | CON/beta | Judge's complaint | Category |
+|---|---|---|---|
+| Q1 | G/G | omits the **$250,000 max penalty (s.158(3))** | Specificity |
+| Q2 | P/G | **misframed sequencing** — revocation not effective until s.171 appeal window expires; beta captured s.169→170-171→174→175 | Process/relationship reasoning |
+| Q3 | G/E | beta enumerated obligations across all roles **w/ section refs + timelines** | Coverage + specificity |
+| Q4 | G/G | **overstated rights count** (~29 / 53 vs real 27) | Over-claiming (mild ER) |
+| Q5 | G/E | beta listed **8 grounds verbatim w/ refs**, CON 6 | Coverage granularity + specificity |
+| Q6 | G/E | beta gave **retention periods (7yr / 1yr)**; CON didn't | Specificity |
+| Q7 | G/G | few `LegalInstrument` subtypes to map | Ontology subtype coverage |
+| Q8 | P/P | `GOVERNS` **conflates "operates" vs "supervises"** → operators listed as supervisors; + KG noise | Edge semantics (+ clutter) |
+
+**Prioritized levers:**
+
+1. **Specificity (biggest).** Q1/Q3/Q5/Q6 lose Excellent purely for omitting
+   concrete facts that ARE in the source — the $250k cap, 7yr/1yr retention
+   periods, the 90-day timeline, verbatim section numbers. The graph captures
+   the entities but strips the figures/citations. Fix: capture key figures/refs
+   as node/edge properties at extraction time, and/or have the query agent quote
+   `FROM_CHUNK` chunk text. Mostly query-side + extraction-property; **not ER.**
+2. **Edge semantics.** Generic labels like `GOVERNS` conflate distinct meanings
+   (operate vs supervise → Q8 category error) and miss conditional sequencing
+   (Q2). The relationship-layer analogue of entity over-generalization. Fix:
+   more discriminating relationship types / disciplined `detail`.
+3. **Coverage granularity** (Q3/Q5/Q7) — beta enumerated grounds/obligations more
+   completely; partly extraction thoroughness, partly ontology subtype richness.
+4. **Entity resolution — secondary.** Only mild count-inflation (Q4) and some
+   clutter (Q8). Real, but not what blocks the winning build from going higher.
+
+**Bottom line:** the path from 13/15-with-6-Goods toward straight Excellents is
+**specificity > edge-semantics > coverage > ER** — and specificity is largely a
+query-side change.
+
+---
+
 ## Caveats
 
 - **N = 15, LLM-judge variance.** The grade *counts* (9 / 10 / 11 / 13) are
