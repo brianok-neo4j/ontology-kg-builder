@@ -170,8 +170,12 @@ The agent system prompts enforce these — maintain them in any new tools or pro
 
 ## Analysis documents
 
-`analysis/` contains evaluation and reference documents from the FLTCA 2021 pilot:
-- `ontology_reference.md` / `ontology_reference_v2.md` — ontology snapshots after schema runs
-- `fltca_qa_assessment.md` — round 1 QA evaluation (Act only)
-- `fltca_qa_assessment_v2.md` — round 2 QA evaluation (Act + O. Reg. 246/22)
-- `test_plan.md` — test questions and evaluation methodology
+`analysis/` contains evaluation and reference documents:
+- `retrieval_quality_investigation.md` — the 2026-06 investigation into why a
+  newer build retrieved worse than an older one; what drives answer quality
+  (query-prompt richness, ontology design), and the open ontology hypothesis
+- `performance_analysis.md` — speed/cost analysis behind the ingest/query optimizations
+- `architecture.md` — pipeline architecture reference
+- `analysis_writeup.md` — FLTCA pilot write-up (beta-lineage ontology + results)
+- `fltca_qa_assessment_v2.md` — pilot round-2 QA evaluation (Act + O. Reg. 246/22)
+- `ontology_reference_v2.md` — beta-lineage ontology schema snapshot
