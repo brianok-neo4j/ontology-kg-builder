@@ -4,220 +4,299 @@
 
 ## Overview
 
-This system converts unstructured legal and regulatory documents into a queryable knowledge graph in Neo4j, then answers natural-language questions over that graph with a high degree of accuracy and nuance.
+This system converts unstructured documents (legislation, regulations, filings,
+reports) into a queryable Neo4j knowledge graph, then answers natural-language
+questions over that graph.
 
-The core insight is a **two-stage graph construction** approach: first derive an abstract schema (the *ontology*) that describes the types of things and relationships present in the document corpus, then populate the graph with *instance data* that conforms to that schema. The schema-first approach produces a graph that is semantically coherent across many documents and can be queried with Cypher traversals that reflect the actual structure of the legal domain — not just keyword search or embedding similarity.
+The core design is **schema-first, two-layer construction**: first derive an
+abstract *ontology* (the types of things and relationships in the domain) from
+the most abstract document(s), then populate an *instance* layer that conforms
+to that ontology. A schema-first graph is semantically coherent across many
+documents and supports Cypher traversals that mirror the real structure of the
+domain — not keyword or embedding similarity.
 
-The system was piloted against the *Fixing Long-Term Care Act, 2021* (FLTCA) and its companion *O. Reg. 246/22 – General*, a combined corpus of ~450 document chunks. Evaluation across 15 questions covering multi-hop traversal, aggregation, hierarchy, path-finding, property retrieval, and stress tests produced 10 Excellent / 4 Good / 1 Partial results, with zero Weak answers.
+Piloted against the *Fixing Long-Term Care Act, 2021* (FLTCA) + *O. Reg. 246/22*
+(~451 chunks). Retrieval quality is measured by an automated A/B + LLM-judge
+harness (`eval/`); the full methodology, experiments, and results are in
+[`retrieval_quality_investigation.md`](retrieval_quality_investigation.md).
 
 ---
 
 ## High-Level Architecture
 
-The system has three independent subsystems that run in sequence:
+Three subsystems, sharing Neo4j as their only state:
 
 ```
-Documents (PDF, HTML, plain text, etc.)
+Documents (PDF, HTML, plain text, …)
        │
        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   INGEST PIPELINE                           │
-│                                                             │
-│  Agent 1 — Ontology Builder                                 │
-│    Reads every chunk, incrementally builds the schema       │
-│    (EntityType nodes, RelType edges) in Neo4j               │
-│                          │                                  │
-│                          ▼                                  │
-│  Agent 2 — Ontology Enhancer                                │
-│    Reviews the complete schema, resolves duplicates,        │
-│    adds class hierarchies, generalizes labels               │
-│                          │                                  │
-│                          ▼                                  │
-│  Agent 3 — Instance Builder                                 │
-│    Reads every chunk again; populates domain-labelled       │
-│    instance nodes and typed edges conforming to schema      │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                       INGEST PIPELINE                          │
+│                                                                │
+│  Agent 1 — Ontology Builder   (build ontology from Act only)   │
+│    fresh agent per chunk; MERGEs EntityType nodes + RelType    │
+│    edges; generalization rules + size cap keep it compact      │
+│                            │                                   │
+│                            ▼                                   │
+│  Agent 2 — Enhancer   (single-shot over the whole schema)      │
+│    dedupes, consolidates, adds SUBCLASS_OF, removes ghosts     │
+│                            │                                   │
+│                            ▼                                   │
+│  Agent 3 — Instance Builder   (over the FULL corpus)           │
+│    concurrent workers; direct-driver writes w/ deadlock retry; │
+│    domain-labelled instance nodes + typed edges + FROM_CHUNK   │
+└──────────────────────────────────────────────────────────────┘
        │
        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   NEO4J AURA DATABASE                       │
-│   Ontology layer (EntityType / RelType)                     │
-│   Instance layer (Obligation, Role, Process, … nodes)      │
-│   Provenance edges (FROM_CHUNK → Chunk → Document)         │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      NEO4J AURA DATABASE                       │
+│  Ontology layer (EntityType / RelType)                         │
+│  Instance layer (Obligation, Role, Process, Concept, … nodes)  │
+│  Provenance (FROM_CHUNK → Chunk ← HAS_CHUNK ← Document)        │
+└──────────────────────────────────────────────────────────────┘
        │
        ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   QUERY AGENT                               │
-│    Grounds entity mentions → composes Cypher →             │
-│    executes → summarizes in natural language                │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                          QUERY AGENT                           │
+│   read schema → ground entity mentions → compose Cypher →      │
+│   execute (read-only) → summarize in natural language          │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+> **Build the ontology from the abstract document(s) only** (e.g. an Act), then
+> run the instance stage over the full corpus (Act + detailed regulations).
+> Deriving the ontology from highly detailed regulations over-fragments the
+> schema (specific provisions become *types* instead of *instances*), which —
+> because the schema is embedded in every chunk's prompt — balloons cost
+> quadratically.
 
 ---
 
 ## The Two-Layer Graph Model
 
-Neo4j holds two structurally separate layers that never reference each other directly.
+Two structurally separate layers that never reference each other directly.
 
-### Ontology Layer
+### Ontology layer
 
-The ontology layer stores the *schema* — the abstract types of entities and relationships that exist in the domain. It uses two Neo4j constructs:
+The *schema* — abstract types and relationships:
 
-- **`EntityType` nodes** — each carries an `entityLabel` (PascalCase, e.g. `Obligation`, `Role`, `Process`) and a natural-language `description`.
-- **`RelType` relationships** — connecting two `EntityType` nodes, carrying a `relLabel` (UPPER_SNAKE_CASE, e.g. `APPLIES_TO`, `CONDITIONED_ON`, `TRIGGERS`) and a `description` that defines the semantics of the edge and describes what the instance-layer `detail` property will hold.
+- **`EntityType` nodes** — `entityLabel` (PascalCase, e.g. `Obligation`, `Role`,
+  `Process`, `Concept`) plus two description fields (see *Compact snapshot*
+  below): `short_description` and `full_description`.
+- **`RelType` edges** between two `EntityType` nodes — `relLabel`
+  (UPPER_SNAKE_CASE, e.g. `APPLIES_TO`, `CONDITIONED_ON`, `TRIGGERS`) plus the
+  same two description fields. The description defines the edge semantics and
+  what the instance-layer `detail` property will hold.
+- **`SUBCLASS_OF` edges** between `EntityType` nodes form an optional class
+  hierarchy (added by the Enhancer).
 
-Example ontology edges:
 ```
-(EntityType {entityLabel: "Obligation"}) -[:RelType {relLabel: "APPLIES_TO"}]->
-(EntityType {entityLabel: "Role"})
-
-(EntityType {entityLabel: "Sanction"}) -[:RelType {relLabel: "CONDITIONED_ON"}]->
-(EntityType {entityLabel: "Process"})
+(EntityType {entityLabel:"Obligation"}) -[:RelType {relLabel:"APPLIES_TO"}]-> (EntityType {entityLabel:"Role"})
 ```
 
-The ontology produced from the FLTCA corpus contains **17 entity types** and **23 unique relationship labels** across 258 RelType edges, with 9 `SUBCLASS_OF` edges forming a class hierarchy.
+### Instance layer
 
-### Instance Layer
+The actual extracted entities. Instance nodes carry the **domain label
+directly** (`:Obligation`, `:Role`, `:Concept`) — not the `EntityType` wrapper —
+and always have a `name` used for `MERGE` deduplication. Edges reuse the
+ontology `relLabel`s, with an optional `detail` property holding the specific
+content. Every instance node links to its source `Chunk` via `FROM_CHUNK`.
 
-The instance layer stores the actual entities and relationships extracted from the documents. Instance nodes carry the domain label directly (e.g. `:Obligation`, `:Role`, `:Sanction`) — not the `EntityType` wrapper — and always have a `name` property used for deduplication via `MERGE`.
-
-Relationships between instance nodes use the same `relLabel` values as the ontology, with an optional `detail` property carrying the specific content (e.g. what is being required, what a prohibition covers, who is conditioned on what).
-
-Every instance node is linked to its source `Chunk` via a `FROM_CHUNK` edge, providing full provenance back to the originating text.
-
-Example instance data:
 ```
-(:Obligation {name: "Licensee must report critical incidents immediately"})
-  -[:APPLIES_TO {detail: "duty to report critical incidents"}]->
-  (:Role {name: "Licensee"})
-
-(:Obligation {name: "..."})-[:FROM_CHUNK]->(:Chunk {chunk_index: 42})
-(:Document {name: "fltca_2021.html"})-[:HAS_CHUNK]->(:Chunk {chunk_index: 42})
+(:Obligation {name:"Licensee must report critical incidents"})
+   -[:APPLIES_TO {detail:"duty to report critical incidents"}]-> (:Role {name:"Licensee"})
+(:Obligation {name:"…"})-[:FROM_CHUNK]->(:Chunk {chunk_index:42})
+(:Document {name:"fltca_2021.html"})-[:HAS_CHUNK]->(:Chunk {chunk_index:42})
 ```
+
+`Document` and `Chunk` are provenance-only and excluded from semantic queries.
 
 ---
 
 ## Document Chunking (`shared/document.py`)
 
-Before any agent runs, documents are split into semantic sections. The chunker handles multiple formats and uses document-native structure rather than fixed character counts.
+No fixed token size — chunks are the document's own semantic sections.
 
 | Format | Method |
 |---|---|
-| **Plain text / Markdown / RST / CSV / JSON** | Split on blank lines (`\n{2,}`). Sections under 200 chars are merged into their neighbour. |
-| **PDF** | `pdfplumber` extracts text per page, then blank-line split. |
-| **HTML / iXBRL (SEC filings)** | BeautifulSoup splits on `<hr>` tags (the SEC filing section-divider convention). iXBRL metadata blocks (`ix:header`, `ix:hidden`, XBRL namespace tags) are removed; inline value wrappers (`ix:nonfraction`, etc.) are unwrapped so numeric values remain in place. Tables are rendered as pipe-delimited rows. Sections under 200 chars are merged. |
+| Plain text / Markdown / RST / CSV / JSON | Split on blank lines (`\n{2,}`); sections < 200 chars merged into a neighbour. |
+| PDF | `pdfplumber` extracts text per page, then blank-line split. |
+| HTML / iXBRL | BeautifulSoup splits on `<hr>` (SEC filing pattern); iXBRL metadata decomposed, inline value wrappers unwrapped, tables rendered pipe-delimited; < 200-char sections merged. |
 
-The FLTCA Act alone produced 282 chunks; adding O. Reg. 246/22 brought the total to 451 chunks.
+Supported: `.txt`, `.md`, `.rst`, `.csv`, `.json`, `.pdf`, `.html`, `.htm`.
 
 ---
 
 ## Ingest Pipeline — Stage by Stage
 
-### Stage 1: Ontology Builder (Agent 1)
+All ingest agents use `claude-sonnet-4-6` via the Strands framework. Each stage
+writes a per-call metrics JSONL log (`ingest/logs/`); cost is recovered with
+`python ingest/main.py cost <log>` or `scripts/cost_watch.py`.
 
-**Purpose:** Read every document chunk and incrementally build a schema in Neo4j using `EntityType` nodes and `RelType` edges. No instance data is written.
+### Stage 1 — Ontology Builder (`ingest/agents/ontology_agent.py`)
 
-**How it works:**
+Reads each chunk and incrementally builds the schema (`EntityType` + `RelType`),
+no instance data. A **fresh agent per chunk** embeds the current ontology
+snapshot in its system prompt. Per chunk, at most two `write-cypher` calls (one
+for `EntityType` nodes, one for `RelType` edges).
 
-For each chunk, a fresh AI agent is constructed (using the Strands AI agent framework with `claude-sonnet-4-6`) with the current state of the ontology embedded in a cached system prompt. The agent is instructed to:
+Key design points:
 
-1. Identify the *types* of entities present in the chunk (e.g. `Obligation`, `Role`, `Process`) — not specific instances.
-2. `MERGE` `EntityType` nodes using `entityLabel` alone (never including `description` in the merge clause, to avoid constraint violations on update).
-3. `MERGE` `RelType` edges between entity types, using a controlled vocabulary of generic relationship labels (`REQUIRES`, `GOVERNS`, `AUTHORISES`, `TRIGGERS`, etc.) with specifics captured in the `description` field.
-4. Batch all writes into at most two Cypher calls: one for nodes, one for edges.
+- **Generalization discipline.** An `EntityType` must be a *category with many
+  instances*, never a specific thing. The prompt forbids the
+  `<Specific><Category>` pattern (e.g. `EvacuationPlan` → use `Plan`; the
+  specific name becomes an instance later) and rejects jurisdiction-embedded
+  labels (`OntarioLabourRelationsBoard` → `RegulatoryTribunal`). This keeps a
+  whole-statute ontology to ~20–50 types rather than hundreds. *(These rules
+  materially affect retrieval quality and ontology stability — see the
+  investigation doc.)*
+- **Size cap.** `--max-entity-types` (default 150, `ONTOLOGY_MAX_ENTITY_TYPES`)
+  aborts the run if the schema balloons, guarding against quadratic cost from an
+  over-fragmented schema embedded in every prompt.
+- **Domain-vocabulary seeding.** `--domain` seeds preferred `EntityType`s from a
+  built-in vocabulary (9 domains; `auto` detects from the first chunk with
+  `claude-haiku-4-5-20251001`). The `legal` vocabulary includes a **`Concept`**
+  catch-all (defined terms, doctrines, principles) — a coherent home for
+  abstract notions that don't fit other types.
+- **Ghost-node prevention.** The prompt requires every variable in an edge
+  `MERGE` to be bound in the same query (an unbound variable silently creates an
+  unlabelled "ghost" node).
+- **Writes** go through `mcp-neo4j-cypher` (stdio MCP server).
+- **Caching** — see *Prompt caching*: a static prefix breakpoint (always cached)
+  plus a snapshot breakpoint that engages once the schema is stable for N chunks.
 
-After each chunk, the pipeline fetches the updated ontology snapshot from Neo4j and compares it to the previous snapshot. If the schema changed, a new agent is built embedding the new snapshot. If the schema is stable for three consecutive chunks (configurable via `ONTOLOGY_CACHE_STABILITY_THRESHOLD`), prompt caching is enabled on the snapshot block, reducing input token cost to approximately 10% for subsequent chunks.
+### Stage 2 — Enhancer (`ingest/agents/enhancer_agent.py`)
 
-**Generalization discipline:** The agent system prompt enforces strict label generalization. Labels must be reusable across jurisdictions and document types. Jurisdiction-specific names (e.g. `OntarioLabourRelationsBoard`) are explicitly rejected in favor of categories (`RegulatoryTribunal`). Relationship labels must connect at least 3–5 entity-type pairs — if a label would only appear once, it is too specific.
+A single-shot agent over the full schema (uses `SlidingWindowConversationManager(window_size=8)`).
+Order of operations:
 
-**Domain vocabulary seeding:** The pipeline supports pre-seeding the ontology with preferred entity types from a domain vocabulary (e.g. `legal`, `medical`, `financial`, `fraud`). By default it auto-detects the domain from the first chunk using a fast `claude-haiku-4-5-20251001` call. The vocabulary provides a starting set of preferred `EntityType` labels that the agent should default to before inventing new ones.
+1. **Remove ghost nodes** first (defensive cleanup of any unlabelled nodes
+   dangling off `RelType` edges).
+2. **Deduplicate** equivalent `EntityType`s (judged from descriptions, not just
+   labels).
+3. **Consolidate** over-granular types.
+4. **Add `SUBCLASS_OF`** hierarchies where a group shares a parent concept.
+5. **Generalize** any remaining jurisdiction-specific labels.
 
-**Write pattern:** The MCP tool `mcp-neo4j-cypher` is used for all Neo4j writes, accessed via stdio. The agent communicates with Neo4j by calling the MCP tools `write-cypher` and `read-cypher` as needed.
+Reads the `full_description` fields (it needs the complete definitions to judge
+equivalence). Writes via `mcp-neo4j-cypher`.
 
----
+### Stage 3 — Instance Builder (`ingest/agents/instance_agent.py`)
 
-### Stage 2: Ontology Enhancer (Agent 2)
+Re-reads the full corpus and populates the instance layer, constrained to the
+finalized ontology. This stage differs most from the others:
 
-**Purpose:** Review the complete schema produced by Agent 1 and make targeted quality improvements before instance data is extracted.
+- **Concurrent.** Chunks are independent and every write is an idempotent
+  `MERGE` on `name`, so chunks run in a thread pool (`--concurrency` /
+  `$INSTANCE_CONCURRENCY`, default 5). Each worker builds its own agent and
+  **resets its conversation per chunk**; all workers share one identical cached
+  schema prefix and the process-wide Neo4j driver.
+- **Direct-driver writes (not MCP).** Writes go through a direct-driver
+  `write_cypher` tool so concurrent-write **deadlocks / transient lock errors
+  are retried with exponential backoff** (`shared/neo4j_tools._run_write`). Tools
+  are `[write_cypher, read_cypher, describe_ontology]` — the high-level
+  create-node helpers are deliberately omitted so the agent can't fall back to
+  one-MERGE-per-call.
+- **Name indexes.** Before the run, `_ensure_instance_name_indexes()` creates a
+  uniqueness constraint on `name` for every instance label, so each `MERGE` is an
+  index seek, not a label scan.
+- **Two-call write pattern.** Nodes first, then relationships (MATCH the nodes,
+  then MERGE edges) — never mixed in one query, with the same ghost-prevention
+  rule as Stage 1. At most two `write_cypher` calls per chunk.
+- **Provenance pre-creation.** `Document` and `Chunk` nodes are pre-created in
+  Python (idempotent `MERGE`) so each chunk's `elementId` can be passed to the
+  agent.
+- **Set-based resume.** `--resume` skips the *set* of completed `chunk_num`s
+  (parallel workers finish out of order).
 
-**How it works:**
+### Conversation management
 
-A single AI agent is built with the full ontology snapshot embedded in a cached system prompt. It runs one extended agentic session (not per-chunk) and is instructed to:
-
-1. **Resolve duplicates:** If two `EntityType` nodes represent the same concept (judged from their `description` fields, not just labels), merge them by copying RelType edges onto the surviving node and deleting the redundant one. Add `SAME_AS` edges when both forms should be preserved for traceability.
-
-2. **Consolidate over-granular types:** If several EntityTypes are specific variants of the same general concept, merge them into a single type with a combined description and transfer all edges.
-
-3. **Introduce class hierarchies:** Where a group of EntityTypes are all subtypes of a common concept, introduce a parent EntityType and link each subtype with `SUBCLASS_OF` edges. For example: `Sanction` and `Standard` as subtypes of `LegalInstrument`; `Obligation`, `Prohibition`, and `Right` as subtypes of `NormativeProvision`.
-
-4. **Generalize jurisdiction-specific labels:** If any label embeds a place name, province, or organization name, rename it to the generalized category.
-
-After every write, the agent runs a targeted verification query to confirm the change took effect before moving on.
-
-The enhancer uses `SlidingWindowConversationManager(window_size=8)` — a wider window than the per-chunk agents — because it reasons across the entire schema and needs to recall earlier observations.
-
----
-
-### Stage 3: Instance Builder (Agent 3)
-
-**Purpose:** Re-read every document chunk and populate the instance layer with real entities and relationships that conform strictly to the finalized ontology.
-
-**How it works:**
-
-A single AI agent is built once for the entire instance run. The full ontology schema is embedded in a cached system prompt (a fixed cost at the start of the run). For each chunk, the agent receives:
-- The chunk text
-- The Neo4j `elementId` of the pre-created `Chunk` node for that chunk
-
-The agent is instructed to:
-
-1. Use only entity labels listed as `entityLabel` in the ontology — no new labels.
-2. Use only relationship types listed as `relLabel` in the ontology — no new types.
-3. Add a `detail` property to each relationship to capture what specifically is being governed, required, prohibited, etc.
-4. `MERGE` every entity on `name` to ensure idempotency — re-running the pipeline on the same document does not create duplicates.
-5. Connect every extracted entity to the provided `Chunk` node via `FROM_CHUNK`.
-6. Batch all writes for a chunk into at most two Cypher calls (nodes, then relationships).
-
-**Pre-creation of provenance nodes:** Before the agent loop begins, the pipeline pre-creates all `Document` and `Chunk` nodes in Neo4j using Python-level tool calls (not via the agent). This ensures the `elementId` values are available to pass to the agent on each chunk.
+The ontology/instance-worker agents use
+`SlidingWindowConversationManager(window_size=6, should_truncate_results=True)`;
+the enhancer uses `window_size=8`; the instance agent additionally resets its
+conversation each chunk.
 
 ---
 
 ## Query Agent (`query/agent.py`)
 
-**Purpose:** Answer natural-language questions over the populated graph.
+Answers natural-language questions over the populated graph. Built once per
+session with the full ontology embedded in a cached system prompt. Fixed
+five-step workflow:
 
-**How it works:**
+1. **Read the ontology** from the prompt — the descriptions distinguish similar
+   labels (`GOVERNS` vs `RESTRICTS` vs `CONDITIONED_ON`). The query agent embeds
+   the **`full_description`** (see below) since it's embedded once per question,
+   not per chunk.
+2. **Ground entity mentions** — `find_entities_by_name` (case-insensitive
+   contains) to map question phrases to real instance nodes.
+3. **Compose Cypher** — read-only, restricted to ontology labels/rel-types,
+   parameterized with grounded names.
+4. **Execute** — `run_read_cypher`.
+5. **Summarize** — concise NL answer grounded in the rows.
 
-The query agent is built once at session start. The full ontology schema is fetched from Neo4j and embedded in a cached system prompt. The agent follows a fixed five-step workflow for every question:
-
-1. **Read the ontology** — from the system prompt. The `description` fields are critical: they distinguish similarly-labeled types (e.g. `GOVERNS` vs. `RESTRICTS` vs. `CONDITIONED_ON` are all distinct).
-
-2. **Ground entity mentions** — identify noun phrases in the question that name specific entities. Call `find_entities_by_name` to locate matching instance nodes by name (full-text or fuzzy match). Pick the best candidates.
-
-3. **Compose Cypher** — write a read-only Cypher query using only labels and relationship types from the ontology. Parameterize entity names. Add `LIMIT 100` unless the question asks for counts or aggregates.
-
-4. **Execute** — call `run_read_cypher` with the query and parameters.
-
-5. **Summarize** — write a concise natural-language answer grounded in the returned rows. If the result is empty, say so and propose a refinement.
-
-The `get_ontology_schema` tool is included as a fallback so the agent can refresh the schema mid-session if it diverges from the cached version (e.g. after an additional ingest run). The agent is instructed never to skip steps 1 or 2.
+`get_ontology_schema` and `describe_ontology` are available to refresh / expand
+schema mid-session. A `SlidingWindowConversationManager(window_size=40)` bounds a
+long REPL session without truncating any single multi-hop question.
 
 ---
 
-## Cost Optimization: Prompt Caching
+## Compact snapshot (description fields)
 
-All three ingest agents and the query agent use Anthropic's prompt caching to reduce token costs substantially.
+Each `EntityType`/`RelType` stores **both** a `short_description` (≤12-word
+phrase) and a `full_description` (complete definition). `ONTOLOGY_COMPACT_SNAPSHOT`
+(default `1`) selects which is *serialized into per-chunk prompts*:
 
-The caching pattern is non-trivial. The Strands framework's `AnthropicModel` silently discards structured system content (a `cache_control` marker on a `SystemContentBlock`). The workaround is to pass the structured system blocks via `params={"system": [...]}` on `AnthropicModel` — these are spread *after* the string `system` field in the framework's `format_request` method and override it. This is implemented in `shared/strands_anthropic.py` as `CacheAwareAnthropicModel`.
+- **Ingest loops embed `short_description`** by default — the schema is embedded
+  in every one of hundreds of chunk prompts, so compactness controls cost. The
+  `describe_ontology` tool fetches full text on demand.
+- **The query agent always embeds `full_description`**, independent of the flag —
+  it's embedded once per question (cheap), and the richer text measurably
+  improves label/edge selection.
 
-| Agent | Caching strategy |
+---
+
+## Prompt caching (`shared/strands_anthropic.py`)
+
+All agents use Anthropic prompt caching. The Strands `AnthropicModel` silently
+drops a `cache_control` marker on a `SystemContentBlock`; the workaround
+(`CacheAwareAnthropicModel`) passes structured system blocks via
+`params={"system":[...]}`, which `format_request` spreads *after* the string
+`system` field, overriding it. The subclass also fixes cache token counts.
+
+| Agent | Strategy |
 |---|---|
-| **Ontology Builder** | Deferred — caching is only enabled once the ontology has been stable for N consecutive chunks (default 3). In the volatile early phase, every rebuild would pay a cache write cost that is never recovered. |
-| **Enhancer** | Always cached — the schema is fetched once at build time and doesn't change during the run. |
-| **Instance Builder** | Always cached — the schema is frozen for the lifetime of the process; cache is written on the first chunk and read for all subsequent ones. |
-| **Query Agent** | Always cached — schema fetched once at `build_agent()` time; every question after the first reads from cache at ~10% of uncached cost. |
+| Ontology Builder | Two breakpoints: a **static prefix** (base prompt + vocab — cache hit every chunk) and the **snapshot** block, which begins caching once the schema is stable for `ONTOLOGY_CACHE_STABILITY_THRESHOLD` chunks (default 3). |
+| Enhancer | Single cached schema prefix (one run). |
+| Instance Builder | One cached schema prefix, written once and read by every chunk / worker. |
+| Query Agent | Cached schema prefix; every question after the first reads it. |
 
-At cache-read pricing, schema tokens cost approximately 10% of uncached input pricing, yielding substantial savings on long runs (hundreds of chunks). For example, a cached schema of ~55,000 tokens read 450 times costs approximately the same as reading it uncached 45 times.
+**TTL.** `ANTHROPIC_CACHE_TTL` (`5m`/`1h`). Ingest defaults to **1h** (the prefix
+is re-read across a long run, so one pricier write beats many TTL-expiry
+re-writes); the query agent defaults to **5m** (a single-shot question exits
+before reuse). A cache-health smoke test (`python -m shared.cache_check`) guards
+this silent path against Strands/SDK regressions.
+
+---
+
+## Evaluation harness (`eval/`)
+
+A/B model comparison for the **instance** and **query** phases (the ontology is
+built once, so every run starts from a common base).
+
+- **`query-ab`** (read-only) runs the question set through the query agent for
+  each candidate model, capturing per-question cost, latency, cycles, and answer.
+- **`instance-ab`** (destructive — wipes the instance layer between models)
+  compares extraction density/coverage.
+- **LLM judge** (`--judge`) grades each answer **Excellent / Good / Partial /
+  Weak** using a separate, stronger model that establishes ground truth from
+  (a) the source document (a `search_source_document` tool), (b) the web
+  (`http_request`, GET only), and (c) its own knowledge.
+- Each run writes per-model `<run_id>_<role>_<model>_metrics.jsonl` to
+  `eval/logs/` in the same format as ingest, readable by `scripts/cost_watch.py`.
+
+See [`retrieval_quality_investigation.md`](retrieval_quality_investigation.md)
+for the methodology, the experiment arc, and findings.
 
 ---
 
@@ -225,118 +304,53 @@ At cache-read pricing, schema tokens cost approximately 10% of uncached input pr
 
 | Component | Technology |
 |---|---|
-| AI agents | [Strands](https://github.com/strands-agents/sdk-python) (Python agent framework) |
-| Language model | `claude-sonnet-4-6` (all agents) |
-| Domain detection | `claude-haiku-4-5-20251001` (fast, one-shot) |
-| Neo4j access (ingest) | `mcp-neo4j-cypher` MCP server via stdio |
-| Neo4j access (query) | Python Neo4j driver (`shared/neo4j_tools.py`) |
+| AI agents | Strands (Python agent framework) |
+| Model | `claude-sonnet-4-6` (all agents); `claude-haiku-4-5-20251001` (domain detect) |
+| Neo4j (ontology/enhancer) | `mcp-neo4j-cypher` MCP server via stdio |
+| Neo4j (instance/query) | direct Python driver (`shared/neo4j_tools.py`) with deadlock retry |
 | Graph database | Neo4j Aura |
-| PDF parsing | `pdfplumber` |
-| HTML parsing | `BeautifulSoup4` |
-| Credentials | `.env` at repository root |
+| PDF / HTML parsing | `pdfplumber` / `BeautifulSoup4` |
+| Credentials | `.env` at repo root |
 
 ---
 
-## Ontology: The FLTCA Schema
+## Ontology design (corpus-dependent)
 
-After the ontology and enhancer pass over the FLTCA + O. Reg. 246/22 corpus, the schema contains:
+The ontology is generated, not hand-authored, so its exact contents depend on
+the corpus and settings — there is no fixed schema. The *design intent*:
 
-| Metric | Count |
-|---|---|
-| Entity types | 17 |
-| Unique relationship labels | 23 |
-| Total RelType edges | 258 |
-| `SUBCLASS_OF` edges (class hierarchy) | 9 |
+- **Categories, not specifics** — `EntityType`s are broad categories (`Plan`,
+  `Obligation`, `Notice`, `Role`, `Process`, `Sanction`, `LegalInstrument`,
+  `Facility`, …); specific named things live in the instance layer.
+- **A `Concept` catch-all** (in the `legal` seed) gives defined terms, doctrines,
+  and abstract notions a coherent home rather than fragmenting them or dropping
+  them.
+- **Generic, reusable relationship labels** (`APPLIES_TO`, `GOVERNS`, `REQUIRES`,
+  `CONDITIONED_ON`, `TRIGGERS`, `PRESCRIBES`, `SUBJECT_TO`, …) with specifics in
+  the edge `detail`.
+- **Healthy size:** ~20–50 `EntityType`s for a statute + regulations; the
+  generalization rules and cap keep it there and keep it *stable* across runs.
 
-### Entity Type Hierarchy
-
-```
-Party
-  └─ InstitutionalActor (abstract)
-       ├─ AdministrativeBody   (boards, committees)
-       ├─ Court                (judicial/tribunal bodies)
-       └─ RegulatoryBody       (agencies, quality centres)
-
-LegalInstrument
-  ├─ Sanction                  (penalties, fines, enforcement orders)
-  └─ Standard                  (technical codes, guidelines, adopted by reference)
-
-NormativeProvision (abstract)
-  ├─ Obligation                (must do / must provide / must report)
-  ├─ Prohibition               (must not / ban / restriction)
-  └─ Right                     (entitlement / permission)
-
-Concept      — formally defined legal terms (e.g. "abuse", "incapable", "consent")
-Facility     — regulated physical premises
-Funding      — government financial allocations
-Process      — regulated procedures (Inspection, Appeal, Admission, etc.)
-Role         — defined functions (Inspector, Licensee, Director, etc.)
-```
-
-Two structural types exist for provenance only and are excluded from semantic queries:
-
-- **`Document`** — a source file ingested into the system
-- **`Chunk`** — a contiguous text span extracted from a Document
-
-### Key Relationship Labels
-
-| Label | Semantics |
-|---|---|
-| `APPLIES_TO` | Scopes, qualifies, or is relevant to another entity (39 entity-type pairs) |
-| `GOVERNS` | Rules over, regulates, or controls (32 pairs) |
-| `CONDITIONED_ON` | Contingent on, dependent on a prior condition being satisfied (29 pairs) |
-| `RESTRICTS` | Limits scope, constrains options, or caps a maximum (22 pairs) |
-| `PRESCRIBES` | Specifies form, content, or method of another entity (17 pairs) |
-| `REQUIRES` | Mandates, obligates, or conditions (13 pairs) |
-| `SUBJECT_TO` | Under jurisdiction of or constrained by (11 pairs) |
-| `TRIGGERS` | Causes, activates, or initiates another entity (11 pairs) |
+(The FLTCA pilot produced ontologies in the ~19–31-type range depending on
+configuration; the investigation doc records the comparisons.)
 
 ---
 
-## Evaluation Results
+## Known limitations & active work
 
-Evaluation was conducted in two rounds: Round 1 over the Act alone (282 chunks), Round 2 over the Act plus O. Reg. 246/22 (451 chunks). Fifteen questions spanning six categories were assessed.
+Tracked as GitHub issues; full analysis in
+[`retrieval_quality_investigation.md`](retrieval_quality_investigation.md).
 
-### Round 2 Summary (Act + Regulation)
-
-| Rating | Count |
-|---|---|
-| Excellent | 10 |
-| Good | 4 |
-| Partial | 1 |
-| Weak | 0 |
-
-### Improvement from Adding the Regulation
-
-Adding O. Reg. 246/22 materially improved answers for 9 of 15 questions:
-
-- **Q5 (Documents Licensee must maintain):** 18 categories → 60+ categories; specific retention periods now appear (7 years, 10 years, 30 days, 1 year)
-- **Q9 (Licensee normative structure):** ~36 prohibitions → ~80 prohibitions; 9 rights → 19 rights
-- **Q13 (What the Act prohibits the Licensee from doing):** Financial prohibitions category added with section references; 36 → ~80 prohibitions
-- **Q1 (Sanctions from inspection):** Specific penalty amounts now present ($25,000 for first failure; $1,100–$11,000 range for regulatory breaches)
-- **Q12 (Licensee reporting obligations):** Tiered incident timelines, PSW records, annual report, monthly attestation
-
-### Query Category Performance
-
-| Category | Examples | Performance |
-|---|---|---|
-| Multi-hop traversal | Sanctions from inspection; Pre-revocation processes | Excellent |
-| Aggregation over full graph | All resident rights; All required documents | Good–Excellent |
-| Hierarchy traversal | LegalInstrument subtypes; InstitutionalActor supervisory powers | Excellent |
-| Path-finding | Complaint-to-sanction chain; Director-to-Resident shortest path | Good–Excellent |
-| Detail/property questions | Licensee reporting obligations; Prohibited actions | Excellent |
-| Stress tests | Who investigates abuse; What standards must homes comply with | Good–Excellent |
-
----
-
-## Known Limitations
-
-**Query formulation variability.** The query agent is not deterministic — the same question can produce different Cypher across sessions depending on how the agent interprets the schema. This primarily affects questions requiring two-path traversals (e.g. "obligations conditioned on a process"), where the agent may choose a simpler, narrower query in one session. Mitigation: add worked example queries to the system prompt for common traversal patterns.
-
-**Numeric targets not captured as structured nodes.** Highly specific numeric values embedded in regulatory prose (e.g. "4 hours/day direct care", "36 minutes/day allied health") are not always extracted as named graph entities during ingestion. They tend to remain as free text that the graph cannot aggregate or filter on.
-
-**Role vs. InstitutionalActor taxonomy.** The Director, Inspector, and Minister are modelled as `Role` nodes, not `InstitutionalActor` nodes. This is a deliberate ontology choice but limits certain supervisory-power queries that expect `InstitutionalActor` or `AdministrativeBody` as the subject.
-
-**Notice/procedural fairness steps not modelled.** The "Notice of Proposal" step that precedes revocation orders under the *Statutory Powers Procedure Act* is not represented as an explicit `Process` node. This is a genuine extraction gap rather than a structural limitation of the graph model.
-
-**Schema is frozen per instance run.** The Instance Builder embeds the ontology in a cached system prompt at agent build time. If the ontology is modified mid-run (e.g. by re-running the Enhancer), the instance agent must be restarted to pick up the changes.
+- **Specificity** — concrete figures, dates, and section references that exist
+  in the source aren't reliably surfaced (they live in prose, not as graph
+  properties). The single biggest retrieval-quality lever; largely query-side +
+  extraction-property work.
+- **Edge semantics** — generic labels like `GOVERNS` can conflate distinct
+  meanings (e.g. "operates" vs "supervises"); conditional/sequencing relations
+  are under-captured.
+- **Instance-layer entity resolution** — `MERGE`-on-`name` catches only exact
+  duplicates, so surface-form variants of one entity ("Licensee" / "the
+  licensee") stay split. Documented; secondary to specificity/edge-semantics.
+- **Schema frozen per instance run** — the instance agent embeds the ontology at
+  build time; re-running the Enhancer mid-run requires restarting the instance
+  stage.
