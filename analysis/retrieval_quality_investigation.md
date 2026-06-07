@@ -183,10 +183,22 @@ FLTCA-specific).
   investigation, and on the *stable, principled* config (rules ON, cost cap intact).
 
 **Conclusion / recommended config:** **generalization rules ON + `Concept` seed +
-full query descriptions.** Three keepers to merge: `ad9d2de` (full query) +
-`213947f` (Concept seed) + **keep the rules ON** (do NOT merge the revert `958343b`
-— proven unstable). The relaxed instance prompt (`9b5d280`) was present in the
-winning build; its specific contribution to the 13 is untested.
+full query descriptions + the ORIGINAL instance prompt** (see isolation test
+below). Merge: `ad9d2de` (full query) + `213947f` (Concept seed); **keep the
+rules ON** (do NOT merge the revert `958343b` — proven unstable) and **drop the
+relaxed instance prompt** (`9b5d280` — see below).
+
+### Isolation test: the relaxed instance prompt doesn't earn its keep
+
+Ran the winning config with the **original** instance prompt instead of the
+relaxed "extract thoroughly" one (gen ON + `Concept` + full query + original
+instance; report `query_ab_20260606T210101Z`). Result **7E/5G/3P/0W = 12 ≥Good**
+vs the relaxed build's 13. The two differ on 6 questions but **bidirectionally**
+(relaxed wins Q1/Q10/Q11; original wins Q2/Q3/Q5) — judge noise, not signal.
+Same 7 Excellent, same 0 Weak. But the relaxed prompt extracts ~30% more (12.1 vs
+9.3 nodes/chunk) at **+22% cost.** So the relaxed instance prompt is noise-level
+on quality and real on cost → **excluded from the recommended config.** This is a
+direct A/B confirming the broader finding that recall *volume* is not the lever.
 
 ---
 
