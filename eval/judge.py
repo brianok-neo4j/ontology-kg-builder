@@ -177,6 +177,120 @@ def _parse_verdict(text: str) -> dict:
     return {"grade": "Unparsed", "rationale": text.strip()[-500:], "evidence": ""}
 
 
+REFERENCE_JUDGE_SYSTEM_PROMPT = """You are an expert evaluator grading answers produced by a
+knowledge-graph question-answering system. You will be given:
+  - the original question
+  - a reference answer (the authoritative correct answer, pre-researched from the source corpus)
+  - specific grading criteria for Excellent / Good / Partial / Weak grades
+  - a candidate answer to grade
+
+Your task: compare the candidate answer against the reference and criteria, then assign a grade.
+Do NOT do any external research — all context needed to grade is provided here.
+
+## Rubric
+
+- **Excellent** — Meets all Excellent criteria. Fully accurate and complete per the reference.
+- **Good** — Meets Good criteria. Accurate but misses some specifics listed in Excellent.
+- **Partial** — Partially addresses the question. Has the main idea but significant gaps or vagueness.
+- **Weak** — Fails to answer, largely incorrect, or contains fabrications not supported by the reference.
+
+## Output
+
+Reason briefly, then end with a fenced JSON block and nothing after it:
+
+```json
+{"grade": "Excellent|Good|Partial|Weak",
+ "rationale": "2-4 sentences: what the answer got right, and what it missed or got wrong",
+ "evidence": "which key facts from the reference the candidate answer did or did not cover"}
+```
+"""
+
+
+def build_judge_no_tools(model_id: str | None = None) -> Agent:
+    """Build a lightweight judge that grades against a stored reference (no search tools)."""
+    effective_model = model_id or JUDGE_MODEL
+    system_blocks = [
+        {"type": "text", "text": REFERENCE_JUDGE_SYSTEM_PROMPT, "cache_control": cache_control()},
+    ]
+    judge = Agent(
+        model=AnthropicModel(
+            model_id=effective_model,
+            max_tokens=JUDGE_MAX_TOKENS,
+            params={"system": system_blocks},
+        ),
+        system_prompt=REFERENCE_JUDGE_SYSTEM_PROMPT,
+        tools=[],
+        conversation_manager=SlidingWindowConversationManager(
+            window_size=20, should_truncate_results=True,
+        ),
+    )
+    judge._model_id = effective_model
+    judge._prev_usage = {k: 0 for k in USAGE_KEYS}
+    return judge
+
+
+def grade_answer_with_reference(
+    judge: Agent, question: str, answer: str, reference_entry: dict
+) -> dict:
+    """Grade a (question, answer) pair against a stored groundtruth reference entry.
+
+    Uses the reference_answer and grading_criteria fields from the groundtruth JSON.
+    No source document or web access needed — all context is in the reference.
+
+    Returns {grade, rationale, evidence, judge_usage, judge_cost}.
+    """
+    ref_answer = reference_entry.get("reference_answer", "")
+    criteria = reference_entry.get("grading_criteria", {})
+    key_facts = reference_entry.get("key_facts", [])
+
+    criteria_block = ""
+    excellent = criteria.get("excellent", [])
+    good = criteria.get("good", [])
+    partial = criteria.get("partial", "")
+    weak = criteria.get("weak", "")
+
+    if excellent:
+        criteria_block += "**Excellent criteria** (all must be met):\n"
+        criteria_block += "\n".join(f"- {c}" for c in excellent) + "\n\n"
+    if good:
+        criteria_block += "**Good criteria** (main elements, some detail may be missing):\n"
+        criteria_block += "\n".join(f"- {c}" for c in good) + "\n\n"
+    if partial:
+        criteria_block += f"**Partial**: {partial}\n\n"
+    if weak:
+        criteria_block += f"**Weak**: {weak}\n\n"
+    if key_facts:
+        criteria_block += "**Key facts the answer must cover**:\n"
+        criteria_block += "\n".join(f"- {f}" for f in key_facts) + "\n"
+
+    judge.messages = []
+    prompt = (
+        f"## Question\n{question}\n\n"
+        f"## Reference answer\n{ref_answer}\n\n"
+        f"## Grading criteria\n{criteria_block}\n"
+        f"## Candidate answer to grade\n{answer}\n\n"
+        "Compare the candidate answer against the reference and grading criteria. "
+        "End with the JSON verdict block."
+    )
+    try:
+        result = judge(prompt)
+        summary = result.metrics.get_summary() if result and result.metrics else {}
+    except Exception as exc:  # noqa: BLE001
+        return {"grade": "Error", "rationale": f"{type(exc).__name__}: {exc}",
+                "evidence": "", "judge_usage": {}, "judge_cost": 0.0}
+
+    cum = summary.get("accumulated_usage", {}) or {}
+    prev = getattr(judge, "_prev_usage", {k: 0 for k in USAGE_KEYS})
+    usage = {k: (cum.get(k, 0) or 0) - prev.get(k, 0) for k in USAGE_KEYS}
+    judge._prev_usage = {k: (cum.get(k, 0) or 0) for k in USAGE_KEYS}
+    model_id = getattr(judge, "_model_id", JUDGE_MODEL)
+
+    verdict = _parse_verdict(str(result))
+    verdict["judge_usage"] = usage
+    verdict["judge_cost"] = cost_of(usage, model_id)
+    return verdict
+
+
 def grade_answer(judge: Agent, question: str, answer: str) -> dict:
     """Grade a single (question, answer) pair.
 

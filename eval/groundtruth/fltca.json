@@ -1,0 +1,498 @@
+[
+  {
+    "index": 1,
+    "question": "What sanctions can result from a failed inspection, and who can issue them?",
+    "reference_answer": "Sanctions from a failed inspection form an escalating ladder: (1) written notification orders (Inspector); (2) compliance orders (Inspector or Director); (3) administrative penalties — $25,000 for a first s.23.1(1) failure, structured fixed amounts for repeat violations, $1,100–$11,000 for various regulatory breaches with $11,000 specifically for failures in key staffing roles (Administrator, DNPC, Medical Director); (4) Re-Inspection Fee (a distinct sanction type added by the regulation); (5) funding reduction or withholding orders (Director or Minister); (6) management orders (Minister appoints a manager); (7) licence suspension (Director or Minister); (8) licence revocation (Director or Minister); (9) appointment of a Supervisor. The issuer hierarchy is Inspector → Director → Minister, with the Superior Court of Justice enforcing court orders.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies specific dollar amounts: $25,000 for first s.23.1(1) failure, $1,100–$11,000 range, $11,000 for Administrator/DNPC/Medical Director",
+        "Names all issuer roles: Inspector, Director, Minister, and Superior Court",
+        "Includes Re-Inspection Fee as a distinct sanction type",
+        "Covers the full escalating ladder from written notice through suspension/revocation to Supervisor appointment",
+        "Correctly maps which sanctions each issuer can issue"
+      ],
+      "good": [
+        "Covers the main sanction types without all specific dollar amounts",
+        "Identifies at least Inspector, Director, and Minister as issuers",
+        "Describes the escalating nature of sanctions"
+      ],
+      "partial": "Identifies some sanction types but misses most issuers or omits the escalating structure entirely.",
+      "weak": "Vague or incorrect — fails to distinguish sanction types, conflates issuers, or provides no specific detail."
+    },
+    "key_facts": [
+      "$25,000 for first s.23.1(1) failure",
+      "$1,100–$11,000 range for regulatory breaches",
+      "$11,000 for Administrator, DNPC, and Medical Director role failures",
+      "Re-Inspection Fee is a distinct sanction type",
+      "Issuer hierarchy: Inspector → Director → Minister → Superior Court"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 2,
+    "question": "What processes must a Licensee participate in before a licence can be revoked?",
+    "reference_answer": "Before a licence can be revoked, the Licensee must participate in a staged process: (1) Inspection and Compliance — the triggering compliance event; (2) Review of Order — the Licensee may request a review within 28 days of an order under s.169; (3) Appeal to the Health Services Appeal and Review Board — 28-day notice period, with the hearing required to start within 90 days (ss.170–171); (4) Records Transfer obligations that apply post-revocation. Critically, the revocation order does not take effect until the appeal period has expired or the appeal has been decided. The Statutory Powers Procedure Act procedural rights are referenced in the Act, but an explicit 'Notice of Proposal' pre-decision step is not modelled in the graph.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies the Review of Order process with 28-day window and s.169 citation",
+        "Identifies the Appeal Board process with 28-day notice period and 90-day hearing start (ss.170–171)",
+        "States that the revocation order does not take effect until the appeal period expires",
+        "Presents the stages in correct sequential order"
+      ],
+      "good": [
+        "Identifies at least two of the three main stages (compliance, review, appeal)",
+        "Notes that an appeal mechanism exists",
+        "May omit specific timeframes but gets the structure right"
+      ],
+      "partial": "Mentions appeal rights but misses specific timeframes or conflates the review and appeal stages.",
+      "weak": "Fails to identify a multi-stage process, describes only a single step, or gives incorrect stages."
+    },
+    "key_facts": [
+      "28-day window for Review of Order (s.169)",
+      "28-day notice period for Appeal Board",
+      "90-day hearing start requirement (ss.170–171)",
+      "Revocation does not take effect during the appeal period",
+      "Records Transfer obligations apply post-revocation"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 3,
+    "question": "Which obligations does a Role have that are conditioned on a prior process completing?",
+    "reference_answer": "Multiple roles have obligations conditioned on prior processes. The correct traversal is through Obligation nodes: Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process. Roles with conditioned obligations include: Director (conditioned on e.g. Deemed Same Licensee Operation Request), Licensee (various obligations conditioned on admission and care processes), Minister, Placement Co-ordinator (conditioned on Eligibility Determination), Rights Adviser, and Staff. A narrow query traversing Role -CONDITIONED_ON-> Process directly will miss most of these, returning only a small subset such as Director and Placement Co-ordinator.",
+    "grading_criteria": {
+      "excellent": [
+        "Covers at least 4 distinct roles with conditioned obligations",
+        "Uses or describes the Obligation-mediated traversal (Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process)",
+        "Names specific process conditions for at least some roles",
+        "Includes both Placement Co-ordinator and Director"
+      ],
+      "good": [
+        "Covers 2–3 roles with conditioned obligations",
+        "Gets the traversal path broadly right",
+        "May miss some roles or specific process names"
+      ],
+      "partial": "Returns only 1–2 entries (e.g. only Director and Placement Co-ordinator) due to using a narrow traversal query that skips the Obligation intermediate node.",
+      "weak": "Returns empty results, fails to identify any role-obligation-process links, or describes a completely different query."
+    },
+    "key_facts": [
+      "Correct traversal: Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process",
+      "Placement Co-ordinator conditioned on Eligibility Determination",
+      "Director conditioned on Deemed Same Licensee Operation Request",
+      "At least 6 roles with conditioned obligations: Director, Licensee, Minister, Placement Co-ordinator, Rights Adviser, Staff"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 4,
+    "question": "What are all the rights that residents hold under this Act?",
+    "reference_answer": "Residents hold at least 55 distinct rights under the Act and O. Reg. 246/22. Categories include: care rights (care plan participation, treatment consent, communication access), dignity rights (privacy, name choice, cultural and religious practice), accommodation rights (choose class of accommodation, request AC installation or removal), financial rights (apply for basic accommodation charge reduction), complaint and legal rights (raise concerns without reprisal), discharge rights (receive notice, refuse transfer into bed to be closed), and health-specific rights. Rights added by the regulation include: Right to Use Recreational Cannabis, Right to Use Unprescribed Natural Health Products, Right to Receive Notice of Discharge, Right to Refuse Transfer into Bed to be Closed, Right to Choose Class of Accommodation, Right to Apply for Reduction in Basic Accommodation Charge, Right to Request Non-Installation/Uninstallation of AC Unit, and Right to Terminate Non-Accommodation Agreement.",
+    "grading_criteria": {
+      "excellent": [
+        "Returns at least 40 distinct rights",
+        "Covers rights from both the Act's Bill of Rights and the regulation",
+        "Includes at least several of the regulatory additions (cannabis, natural health products, AC, discharge, accommodation choice)",
+        "Organizes or categorizes rights meaningfully rather than listing names only"
+      ],
+      "good": [
+        "Returns 20–39 distinct rights",
+        "Covers the main Bill of Rights provisions accurately",
+        "May miss most regulatory additions",
+        "Accurate for what it covers"
+      ],
+      "partial": "Returns fewer than 20 rights or only lists right names without any context or categorization.",
+      "weak": "Returns very few rights, confuses rights with obligations, or asserts non-existent rights."
+    },
+    "key_facts": [
+      "At least 55 distinct rights in the full Act + Regulation graph",
+      "Right to Use Recreational Cannabis (from regulation)",
+      "Right to Use Unprescribed Natural Health Products (from regulation)",
+      "Right to Refuse Transfer into Bed to be Closed (from regulation)",
+      "Right to Terminate Non-Accommodation Agreement (from regulation)"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 5,
+    "question": "What are all the grounds under which a licence can be suspended or revoked?",
+    "reference_answer": "Grounds for licence suspension or revocation are found in two provisions. Under s.159(2), the Director may act on grounds (a)–(f): (a) failure to comply with the Act or regulations; (b) conduct contrary to the public interest; (c) providing false or misleading information; (d) ceasing to operate; (e) substantial change in circumstances; (f) any ground prescribed by regulation. Under s.161, the Minister has a broader discretionary power. O. Reg. 246/22 added a transitional ground under s.352, allowing the Director to act on grounds that arose under the former Long-Term Care Homes Act, 2007.",
+    "grading_criteria": {
+      "excellent": [
+        "Cites s.159(2) and enumerates at least 4 of the 6 lettered grounds (a)–(f)",
+        "Notes the s.161 Minister discretionary power separately from the Director's s.159 power",
+        "Includes the transitional ground from s.352 of O. Reg. 246/22"
+      ],
+      "good": [
+        "Covers the main s.159(2) grounds",
+        "Identifies both Director and Minister as actors with distinct powers",
+        "May omit the transitional ground or specific section references"
+      ],
+      "partial": "Lists some grounds but misses the Director/Minister power distinction or omits most section references.",
+      "weak": "Provides only vague generalities without grounding in the specific statutory provisions."
+    },
+    "key_facts": [
+      "s.159(2)(a)–(f) Director grounds",
+      "s.161 Minister discretionary power",
+      "s.352 O. Reg. 246/22 transitional ground",
+      "Transitional ground covers conduct under the former Long-Term Care Homes Act, 2007"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 6,
+    "question": "List every type of document a Licensee is required to maintain.",
+    "reference_answer": "A Licensee must maintain over 60 categories of documents. Key categories and examples include: care documents (written care plans, individualized continence plans, individualized menus); policy documents (written visitor policy, written policy on secure outside area doors, written policies for monitoring maintenance/repair service providers, written emergency drug supply policy, drug policies covering self-administration/natural health products/cannabis/medical cannabis/medication management/destruction and disposal, medication management policies and protocols, trust account written policy); personnel records (police record check results; staff, volunteer, and board records with 7-year retention); financial records (audited reconciliation reports, non-arm's-length procurement records, annual financial statements); safety records (temperature records with 1-year retention, air conditioning records, visitor logs with 30-day minimum retention); quality records (CQI reports); food records (food production records with 1-year retention, non-resident food records with 7-year retention); and resident records (10-year retention after discharge). Specific retention periods: 7 years for financial/staff/volunteer/trust records; 10 years for resident records; 30 days for visitor logs; 1 year for food production and temperature records.",
+    "grading_criteria": {
+      "excellent": [
+        "Covers at least 8 distinct document categories",
+        "Includes at least two specific retention periods (7 years, 10 years, 30 days, or 1 year)",
+        "Includes at least several regulation-sourced document types (drug policies, AC records, visitor logs, CQI reports)",
+        "Includes trust account written policy and police record check results"
+      ],
+      "good": [
+        "Covers 4–7 distinct categories",
+        "Accurate for what it covers",
+        "May omit retention periods or most of the regulation-sourced document types"
+      ],
+      "partial": "Lists fewer than 4 categories or gives only generic descriptions without naming specific document types.",
+      "weak": "Very few documents mentioned, major categories absent, or incorrect information about what must be maintained."
+    },
+    "key_facts": [
+      "7-year retention for financial, staff, volunteer, and trust records",
+      "10-year retention for resident records after discharge",
+      "30-day minimum retention for visitor logs",
+      "1-year retention for food production and temperature records",
+      "Over 60 document categories in the complete answer"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 7,
+    "question": "What are all the subtypes of LegalInstrument, and which parties can issue each one?",
+    "reference_answer": "LegalInstruments have two subtypes: Sanctions and Standards. Sanctions can be issued by: Inspector (compliance orders), Director (administrative penalties, compliance orders, other orders), and Minister (funding orders, management orders, suspension and revocation orders). Standards can be issued by the Director specifically — the Director Standards and Protocols for Infection Prevention and Control, and Director Surveillance Protocols for Communicable Disease, both sourced from O. Reg. 246/22. The Director is the only role that issues both subtypes of LegalInstrument.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies Sanction and Standard as the two subtypes",
+        "Names Inspector, Director, and Minister as Sanction issuers with examples",
+        "Identifies the Director as the issuer of Standards, naming the IPAC and Communicable Disease protocols specifically",
+        "Notes that the Director uniquely issues both subtypes"
+      ],
+      "good": [
+        "Identifies both subtypes",
+        "Names at least two of the three Sanction issuers",
+        "May miss the Director-as-Standard-issuer detail that came from the regulation"
+      ],
+      "partial": "Identifies one subtype clearly but cannot identify issuers for both, or lists subtypes without any issuer mapping.",
+      "weak": "Fails to identify the two-subtype structure or confuses the two categories."
+    },
+    "key_facts": [
+      "Two subtypes: Sanction and Standard",
+      "Director issues both Standards (IPAC protocols, Communicable Disease protocols) and Sanctions",
+      "Director is the only role issuing both subtypes",
+      "Inspector issues compliance orders (Sanctions)",
+      "Minister issues funding, management, suspension, and revocation orders (Sanctions)"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 8,
+    "question": "Which InstitutionalActors have supervisory powers over Facilities?",
+    "reference_answer": "At least 4 InstitutionalActors (or actors with supervisory powers) are connected to Facilities: Director (issues compliance orders, approval decisions, licence actions), Inspector (conducts inspections and issues compliance orders), Continuous Quality Improvement Committee (administrative body governing Long-Term Care Homes, added by O. Reg. 246/22), and at least one additional actor. There are at least 6 distinct facility-level relationships. Note: Director, Inspector, and Minister are modelled as Role nodes rather than InstitutionalActor nodes in the ontology, which means a query restricted to the InstitutionalActor label may miss them.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies at least 3 distinct supervisory actors",
+        "Includes the Continuous Quality Improvement Committee from the regulation",
+        "Notes or accounts for the Role vs. InstitutionalActor taxonomy distinction",
+        "Gives at least one specific supervisory power per actor"
+      ],
+      "good": [
+        "Identifies 2–3 actors with supervisory powers",
+        "Accurate for what it covers",
+        "May miss the CQI Committee or the taxonomy distinction"
+      ],
+      "partial": "Identifies only 1 actor or lists actors without describing any supervisory powers.",
+      "weak": "Incorrect actors, no powers identified, or empty result."
+    },
+    "key_facts": [
+      "Continuous Quality Improvement Committee added by O. Reg. 246/22",
+      "At least 4 actors and 6 distinct facility relationships",
+      "Director, Inspector, and Minister are Role nodes not InstitutionalActor nodes (ontology design choice)"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 9,
+    "question": "Show me the full normative structure for the Licensee role — what Obligations, Prohibitions, and Rights apply to them?",
+    "reference_answer": "The Licensee's normative structure comprises approximately 100 Obligations, 80 Prohibitions, and 19 Rights. Key obligations from the regulation include: staffing minimums (Administrator on-site hours by bed capacity, DNPC qualifications and hours, Medical Director written agreement); police record check obligations; PSW transitional workforce obligations; admission obligations under ss.240.1–240.5; maximum accommodation charge obligations (ss.291–295); trust account obligations; non-arm's-length procurement records; and duty to operate in the public interest. Key prohibitions include financial prohibitions with section references (s.286(4)(a)–(c) for trust accounts including $5,000 cap per resident and no commingling; s.289 paras 1–8 for prohibited charges; ss.290–295 for maximum charge limits); prohibition on AC installation/removal against resident wishes; prohibition on continence products as substitute for toileting; prohibition on physical device in resident's bed; and prohibition on discharge during emergency or outbreak. Rights include 6 distinct discharge rights, admission approval withdrawal on change of condition, and exemption from website requirement for small homes without internet.",
+    "grading_criteria": {
+      "excellent": [
+        "Returns at least 80 Obligations",
+        "Returns at least 40 Prohibitions (complete answer has ~80)",
+        "Returns at least 10 Rights (complete answer has ~19)",
+        "Includes financial prohibitions with section references (s.286(4), s.289, ss.290–295)",
+        "Includes staffing minimums from the regulation (Administrator hours, DNPC, Medical Director)"
+      ],
+      "good": [
+        "Returns 50–79 obligations and 20–39 prohibitions",
+        "Covers main Obligation/Prohibition/Right categories even if counts are lower",
+        "May miss financial prohibitions detail or regulation-sourced additions"
+      ],
+      "partial": "Returns fewer than 50 obligations or fewer than 10 prohibitions, or fails to distinguish between Obligation, Prohibition, and Right types.",
+      "weak": "Very sparse result, major categories absent, or conflates normative types."
+    },
+    "key_facts": [
+      "~100 obligations, ~80 prohibitions, ~19 rights in the full Act + Regulation graph",
+      "s.286(4)(a)–(c): trust account prohibitions including $5,000 cap and no commingling",
+      "s.289 paras 1–8: prohibited charges",
+      "ss.290–295: maximum charge limits",
+      "6 distinct discharge rights",
+      "Staffing minimums: Administrator on-site hours, DNPC hours and qualifications, Medical Director written agreement"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 10,
+    "question": "What is the complete chain from a resident complaint to a sanction being issued?",
+    "reference_answer": "The complete chain follows 6 escalating stages governed by Part X — Compliance and Enforcement of the Act: (1) Written notification to the Licensee; (2) Compliance order issued; (3) Administrative penalty assessed — $25,000 for a first s.23.1(1) failure, $1,100–$11,000 for regulatory breaches; (4) Funding orders (reduction or withholding, issued by Director or Minister); (5) Management order — Minister appoints a manager to run the home; (6) Licence suspension or revocation. The Supervisor appointment is an additional end-stage tool. Appeals at each stage run to the Health Services Appeal and Review Board.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies at least 5 of the 6 stages in correct order",
+        "Names Part X — Compliance and Enforcement as the governing part",
+        "Includes specific penalty amounts ($25,000, $1,100–$11,000) from the regulation",
+        "Mentions the Appeal Board as the review mechanism at each stage"
+      ],
+      "good": [
+        "Identifies at least 4 stages in broadly correct order",
+        "Accurate for what it covers",
+        "May omit penalty specifics or the Part X reference"
+      ],
+      "partial": "Identifies 2–3 stages but misses major steps or presents them out of order.",
+      "weak": "Only identifies 1 stage or describes a different process entirely."
+    },
+    "key_facts": [
+      "6-stage escalating ladder",
+      "Part X — Compliance and Enforcement",
+      "$25,000 first-violation administrative penalty",
+      "Management order precedes suspension/revocation",
+      "Health Services Appeal and Review Board at each stage"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 11,
+    "question": "How is the Director connected to a Resident — what is the shortest path of relationships?",
+    "reference_answer": "The shortest path from Director to Resident is 2 hops. At least 4 distinct 2-hop paths exist: (1) Director → [relates to] → Critical Incident Immediate Notification Process → [involves] → Resident; (2) Director → [relates to] → One Business Day Incident Notification Process → [involves] → Resident; (3) Director → [relates to] → Accommodation Charge Reduction → [applies to] → Resident; (4) a fourth path via another process or obligation. The structural insight is that the Director never acts directly on a Resident — all paths are mediated through a process, obligation, or instrument node.",
+    "grading_criteria": {
+      "excellent": [
+        "States that the shortest path is 2 hops",
+        "Identifies at least 3 distinct 2-hop paths",
+        "Includes the Critical Incident Immediate Notification Process and One Business Day Incident Notification Process paths",
+        "Notes the structural observation that Director never acts directly on Resident"
+      ],
+      "good": [
+        "States shortest path is 2 hops",
+        "Identifies at least 2 distinct paths",
+        "May omit the regulation-sourced notification process paths"
+      ],
+      "partial": "Finds a path but states an incorrect hop count, or finds only 1 path without noting others exist.",
+      "weak": "Cannot find a valid path or states an incorrect hop count with no supporting evidence."
+    },
+    "key_facts": [
+      "Shortest path is 2 hops",
+      "At least 4 distinct 2-hop paths",
+      "Critical Incident Immediate Notification Process path (from regulation)",
+      "One Business Day Incident Notification Process path (from regulation)",
+      "Director never acts directly on Resident — always mediated"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 12,
+    "question": "What specifically is a Licensee required to report to the Director?",
+    "reference_answer": "A Licensee must report to the Director across approximately 10 categories: (1) Incident reports with tiered timelines — immediate for critical incidents, within 1 business day for certain incidents, within 3 business days for significant health change injury incidents, within 10 days for the written incident report and the abuse/neglect final report; (2) Annual Report under s.284(1) with required content specified in s.284(2); (3) Annual Attestation under s.270(3); (4) Monthly PSW qualification records (transitional workforce obligations); (5) Key Personnel name and contact information under s.285; (6) Medication incidents and adverse drug reactions; (7) After-hours emergency contact procedure; (8) Closure Plan at least 14 months before closure; (9) Air conditioning information reports; (10) Preliminary and final abuse reports as distinct reporting obligations.",
+    "grading_criteria": {
+      "excellent": [
+        "Covers at least 7 of the 10 reporting categories",
+        "Correctly states the tiered incident timelines (immediate, 1 business day, 3 business days, 10 days)",
+        "Includes Annual Report (s.284) and Annual Attestation (s.270(3))",
+        "Includes the 14-month Closure Plan requirement"
+      ],
+      "good": [
+        "Covers 4–6 categories",
+        "Gets the incident reporting tiers broadly right",
+        "May omit Annual Attestation, PSW records, or the Closure Plan"
+      ],
+      "partial": "Covers 2–3 categories without the tiered timeline structure for incident reports.",
+      "weak": "Only mentions one type of report or provides only vague generalities about reporting."
+    },
+    "key_facts": [
+      "Immediate reporting for critical incidents",
+      "1 business day for certain incident types",
+      "3 business days for significant health change injury incidents",
+      "10 days for written incident report and abuse/neglect final report",
+      "Annual Report s.284(1) and Annual Attestation s.270(3)",
+      "Closure Plan required at least 14 months before closure",
+      "s.285 Key Personnel name and contact"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 13,
+    "question": "What does the Act prohibit a Licensee from doing to a resident?",
+    "reference_answer": "The Act and Regulation prohibit a Licensee from approximately 80 actions toward residents, organized in 9 categories: (1) Physical/restraint prohibitions — applying a physical device to a resident in bed; using continence products as a substitute for toileting; (2) Abuse and neglect prohibitions; (3) Privacy and dignity violations; (4) Financial prohibitions — s.289 paras 1–8 (prohibited charges), s.286(4)(a)–(c) (trust account prohibitions: $5,000 cap per resident, no commingling of funds, no transaction fees), ss.290–295 (maximum charge limits); (5) Discharge prohibitions — 4 specific no-discharge situations including during an emergency or outbreak; (6) Environmental prohibitions — AC installation or removal against resident wishes; (7) Communication and information prohibitions; (8) Access prohibitions; (9) Reprisal prohibitions. The financial prohibition category was substantially expanded by the regulation.",
+    "grading_criteria": {
+      "excellent": [
+        "Covers at least 6 of the 9 prohibition categories",
+        "Includes financial prohibitions with specific section references (s.289, s.286(4), ss.290–295)",
+        "States the $5,000 trust fund cap per resident and no-commingling rule",
+        "Includes all 4 no-discharge situations",
+        "Includes the AC installation/removal prohibition"
+      ],
+      "good": [
+        "Covers 4–5 categories",
+        "Includes at least some financial prohibitions",
+        "May omit specific section references but gets the main categories"
+      ],
+      "partial": "Covers 2–3 categories; likely misses financial prohibitions — the largest category added by the regulation.",
+      "weak": "Only one category covered or gives vague descriptions not grounded in the Act/Regulation."
+    },
+    "key_facts": [
+      "s.289 paras 1–8: prohibited charges",
+      "s.286(4)(a)–(c): trust account prohibitions",
+      "$5,000 cap per resident in trust accounts",
+      "No commingling of trust funds, no transaction fees",
+      "4 no-discharge situations (including during emergency/outbreak)",
+      "~80 prohibitions total in the full Act + Regulation graph"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 14,
+    "question": "Who is responsible for investigating a complaint about abuse?",
+    "reference_answer": "The Licensee bears primary legal responsibility for investigating complaints about abuse. The Director is the oversight recipient — the Licensee must report investigation results to the Director. The regulation added the obligation to notify the Resident and their Substitute Decision-Maker of investigation results. The Director of Care has an operational role in practice but is not modelled as a distinct entity in the graph (the ontology does not distinguish Director of Care from other role types). This is a graph granularity limitation, not an error.",
+    "grading_criteria": {
+      "excellent": [
+        "Correctly identifies the Licensee as the primary responsible party for investigation",
+        "Identifies the Director as the oversight recipient (receives reports, not the primary investigator)",
+        "Includes the obligation to notify the Resident and Substitute Decision-Maker (from the regulation)"
+      ],
+      "good": [
+        "Correctly identifies Licensee and Director",
+        "May omit the SDM notification obligation"
+      ],
+      "partial": "Identifies the Director as the investigator — incorrect; Director is oversight recipient, not primary investigator.",
+      "weak": "Cannot identify the responsible parties or gives a clearly incorrect answer attributing investigation to the wrong entity."
+    },
+    "key_facts": [
+      "Licensee has primary legal responsibility for investigation",
+      "Director is the oversight recipient — receives reports, does not conduct the investigation",
+      "Resident and Substitute Decision-Maker must be notified of investigation results (from regulation)",
+      "Director of Care has an operational role but is not a distinct graph entity"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  },
+  {
+    "index": 15,
+    "question": "What standards must a long-term care home comply with?",
+    "reference_answer": "Long-term care homes must comply with standards from multiple sources: (1) Act-based operational standards embedded in the Act's requirements; (2) College of Nurses of Ontario Practice Standards and Guidelines (O. Reg. 246/22); (3) Director Standards and Protocols for Infection Prevention and Control (O. Reg. 246/22); (4) Director Surveillance Protocols for Communicable Disease (O. Reg. 246/22); (5) Manufacturer Specifications for Cleaning and Disinfection; (6) Written Program Description Standard (O. Reg. 246/22); (7) Organised Interdisciplinary Restorative Care Program standards. Standards should be attributed to their source instrument — Act or O. Reg. 246/22. Note: the specific 4 hours/day direct care and 36 minutes/day allied health numeric targets exist in the regulation but may not be captured as named Standard nodes in the graph.",
+    "grading_criteria": {
+      "excellent": [
+        "Covers at least 5 distinct standards",
+        "Includes the College of Nurses of Ontario Practice Standards and Guidelines",
+        "Includes the Director IPAC Standards and Director Communicable Disease Surveillance Protocols",
+        "Attributes standards to both the Act and O. Reg. 246/22 by name"
+      ],
+      "good": [
+        "Covers 3–4 distinct standards",
+        "Includes at least one regulation-sourced standard",
+        "May miss CNO standards or Manufacturer Specifications"
+      ],
+      "partial": "Covers 1–2 standards; likely misses all regulation-sourced standards.",
+      "weak": "Cannot identify specific named standards, or gives only a generic description of 'compliance with all applicable standards'."
+    },
+    "key_facts": [
+      "College of Nurses of Ontario Practice Standards and Guidelines (O. Reg. 246/22)",
+      "Director Standards and Protocols for Infection Prevention and Control (O. Reg. 246/22)",
+      "Director Surveillance Protocols for Communicable Disease (O. Reg. 246/22)",
+      "Manufacturer Specifications for Cleaning and Disinfection",
+      "Written Program Description Standard (O. Reg. 246/22)",
+      "4 hrs/day direct care target exists in regulation but may not be captured as a named Standard node"
+    ],
+    "generated_at": "2026-06-08T00:00:00+00:00",
+    "research_model": "human",
+    "source_path": "fltca_2021 + O. Reg. 246/22",
+    "duration_s": 0,
+    "usage": {},
+    "cost": 0
+  }
+]
