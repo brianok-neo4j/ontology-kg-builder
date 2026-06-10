@@ -198,301 +198,54 @@
   },
   {
     "index": 7,
-    "question": "What are all the subtypes of LegalInstrument, and which parties can issue each one?",
-    "reference_answer": "LegalInstruments have two subtypes: Sanctions and Standards. Sanctions can be issued by: Inspector (compliance orders), Director (administrative penalties, compliance orders, other orders), and Minister (funding orders, management orders, suspension and revocation orders). Standards can be issued by the Director specifically — the Director Standards and Protocols for Infection Prevention and Control, and Director Surveillance Protocols for Communicable Disease, both sourced from O. Reg. 246/22. The Director is the only role that issues both subtypes of LegalInstrument.",
+    "question": "What are all the types of legal instruments referenced in this Act and its regulations, and who can issue each one?",
+    "reference_answer": "The Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and its regulations (notably O. Reg. 246/22 (General)) reference a layered set of legal instruments, each with a distinct issuing authority. The definition of a 'requirement under this Act' (s. 2(1)) itself enumerates the core instruments: requirements in the Act, in the regulations, or in 'an order or agreement made under this Act,' plus a condition of a licence under Part VIII, an approval under Part IX, conditions to which funding is subject under s. 93, and an operational or policy directive issued by the Minister under s. 184.\n\nThe main types of legal instruments and who can issue/make each are:\n\n1. REGULATIONS — Made by the Lieutenant Governor in Council (Cabinet) for carrying out the purposes and provisions of each Part (e.g., ss. 41, 45, 61, 74, 92, 97, 120, and the general regulation-making power). O. Reg. 246/22 is the principal regulation. The Lieutenant Governor in Council also makes regulations governing the Residents' Bill of Rights (s. 3(4)) and dividing territorial districts (Part IX).\n\n2. OPERATIONAL OR POLICY DIRECTIVES — Issued by the Minister under s. 184 where the Minister considers it in the public interest. They are binding on every licensee, may be general or particular but may NOT be directed at one particular home or licensee, and Part III (Regulations) of the Legislation Act, 2006 does not apply to them.\n\n3. LICENCES (Part VIII) — Issued by the Director (following a determination by the Minister or a decision of the Director under s. 99). A licence is required to operate (s. 98). Sub-types include:\n   - The standard/regular licence (s. 102), and an undertaking to issue a licence (s. 103) — Director;\n   - Temporary licence (s. 114) — issued by the Director, term of no more than five years, not renewable;\n   - Temporary emergency licence (s. 115) — issued by the Director to accommodate persons affected by a temporary emergency, term of no more than one year, not renewable.\n   The Minister may restrict who may be issued a licence (s. 100), and the Director determines eligibility (s. 101).\n\n4. APPROVALS (Part IX) — Granted for municipal homes, joint homes, and First Nations homes (the alternative to a Part VIII licence). The Minister/Director are involved in granting approvals; a licensee includes the municipality/board of management that maintains a home approved under Part IX. Licensee approval is also given for resident admissions (s. 51), and the Director's approval/consent is required for matters such as transfers of licences (s. 108) and material amendments to management contracts (s. 113).\n\n5. ORDERS — Several distinct order types:\n   - Compliance orders (s. 155) — made by an inspector OR the Director, requiring a licensee to do/refrain from doing things, prepare a plan for achieving compliance, arrange training, etc.;\n   - Orders re renovations, additions or alterations (s. 138) — made by the Director against a municipality/board of management maintaining a municipal or joint home;\n   - Other enforcement orders under ss. 155-161 (e.g., orders affecting licences, suspension under s. 161, revocation/suspension of a licence under s. 159, management orders), made by an inspector or the Director as applicable;\n   - A physician, registered nurse in the extended class (or other prescribed person) orders or approves restraining of a resident (ss. 36, 38);\n   - An attending clinician issues a discharge order for an ALC patient under the Public Hospitals Act (s. 60.x).\n\n6. NOTICES OF ADMINISTRATIVE PENALTY (s. 158) — Issued by an inspector OR the Director; amount not to exceed $250,000, determined in accordance with the regulations, payable to the Minister of Finance.\n\n7. WRITTEN NOTIFICATIONS (s. 154) — Issued by an inspector when non-compliance is found.\n\n8. WARRANTS (s. 151) — Issued by a justice of the peace, authorizing a named inspector to enter premises and exercise inspection powers.\n\n9. CERTIFICATES OF APPOINTMENT (s. 144) — Issued by the Minister to every inspector the Minister appoints.\n\n10. POLICIES — Made by the Minister (e.g., licensing policy under s. 99(2), restriction policy under s. 100) and by the Director (e.g., policy on when public consultation is not warranted); Part III of the Legislation Act, 2006 does not apply to these policies.\n\n11. AGREEMENTS — Including agreements between a licensee and the Crown (or its agent), agreements between a licensee and a resident/substitute decision-maker, development agreements, and management contracts under s. 113 (which require Director consent for material amendments).\n\n12. DESIGNATIONS — The Minister designates (and may revoke/re-designate) placement co-ordinators (s. 47).\n\nIn summary, the Lieutenant Governor in Council makes regulations; the Minister issues operational/policy directives, makes policies, appoints inspectors (issuing certificates of appointment), designates placement co-ordinators, and restricts/determines licensing; the Director issues licences (including temporary and temporary emergency licences), grants approvals/consents, and (together with inspectors) makes compliance and other enforcement orders, notices of administrative penalty and written notifications; inspectors issue notifications, orders, and penalty notices and obtain warrants; a justice of the peace issues warrants; and physicians/RNs in the extended class issue care-related orders (e.g., restraining orders).",
     "grading_criteria": {
       "excellent": [
-        "Identifies Sanction and Standard as the two subtypes",
-        "Names Inspector, Director, and Minister as Sanction issuers with examples",
-        "Identifies the Director as the issuer of Standards, naming the IPAC and Communicable Disease protocols specifically",
-        "Notes that the Director uniquely issues both subtypes"
+        "Must identify REGULATIONS as made by the Lieutenant Governor in Council (Cabinet), with O. Reg. 246/22 as the principal regulation",
+        "Must identify OPERATIONAL OR POLICY DIRECTIVES as issued by the Minister under s. 184 (binding on licensees; cannot target a single home)",
+        "Must identify LICENCES (Part VIII) as issued by the Director, and distinguish at least temporary licences (s. 114) and temporary emergency licences (s. 115) — also issued by the Director",
+        "Must identify ORDERS (e.g., compliance orders s. 155) as made by an inspector or the Director, and notices of administrative penalty (s. 158) issued by an inspector or the Director",
+        "Must identify WARRANTS as issued by a justice of the peace (s. 151)",
+        "Should reference APPROVALS under Part IX (municipal/joint/First Nations homes) as a distinct instrument from licences",
+        "Should correctly attribute issuing authorities consistently (LGIC vs Minister vs Director vs inspector vs justice of the peace)"
       ],
       "good": [
-        "Identifies both subtypes",
-        "Names at least two of the three Sanction issuers",
-        "May miss the Director-as-Standard-issuer detail that came from the regulation"
+        "Correctly covers the main instruments: regulations (LGIC), directives (Minister), licences (Director), orders and administrative penalties (inspector/Director), and warrants (justice of the peace)",
+        "May miss some secondary instruments (e.g., certificates of appointment, designations of placement co-ordinators, policies, agreements, restraining orders by physicians)",
+        "May not distinguish all licence sub-types but should mention licences issued by the Director and at least temporary or temporary emergency licences",
+        "Approximate section references acceptable; minor attribution errors tolerable"
       ],
-      "partial": "Identifies one subtype clearly but cannot identify issuers for both, or lists subtypes without any issuer mapping.",
-      "weak": "Fails to identify the two-subtype structure or confuses the two categories."
+      "partial": "Identifies a couple of instruments (e.g., regulations and licences) and roughly who issues them, but omits most categories (directives, orders, penalties, warrants, approvals) or is vague about issuing authorities.",
+      "weak": "Lists generic 'laws/regulations' without correctly attributing issuing authorities, conflates the Minister/Director/LGIC roles, fabricates instruments or authorities not in the Act, or fails to draw from the corpus."
     },
     "key_facts": [
-      "Two subtypes: Sanction and Standard",
-      "Director issues both Standards (IPAC protocols, Communicable Disease protocols) and Sanctions",
-      "Director is the only role issuing both subtypes",
-      "Inspector issues compliance orders (Sanctions)",
-      "Minister issues funding, management, suspension, and revocation orders (Sanctions)"
+      "Regulations are made by the Lieutenant Governor in Council (Cabinet); O. Reg. 246/22 is the principal/General regulation",
+      "Operational or policy directives are issued by the Minister under section 184 and are binding on all licensees but may not target one particular home or licensee",
+      "Licences are issued by the Director under Part VIII (following a determination by the Minister or decision of the Director under s. 99); a licence is required to operate (s. 98)",
+      "Temporary licences (s. 114, max 5 years) and temporary emergency licences (s. 115, max 1 year, for persons affected by a temporary emergency) are issued by the Director and are not renewable",
+      "Approvals under Part IX cover municipal homes, joint homes and First Nations homes (an alternative to a Part VIII licence)",
+      "Compliance orders under section 155 may be made by an inspector or the Director",
+      "Notices of administrative penalty (s. 158) may be issued by an inspector or the Director, not exceeding $250,000, payable to the Minister of Finance",
+      "Written notifications under s. 154 are issued by an inspector when non-compliance is found",
+      "Warrants are issued by a justice of the peace (s. 151)",
+      "Certificates of appointment are issued by the Minister to inspectors (s. 144); the Director is an inspector by virtue of office",
+      "The Minister designates (and may revoke/re-designate) placement co-ordinators (s. 47)",
+      "The Director may make orders re renovations/additions/alterations to municipal or joint homes (s. 138)",
+      "Restraining of a resident must be ordered or approved by a physician, registered nurse in the extended class, or other prescribed person (ss. 36, 38)",
+      "The definition of 'requirement under this Act' (s. 2(1)) lists the Act, regulations, orders, agreements, conditions of a licence (Part VIII), approvals (Part IX), funding conditions (s. 93), and the Minister's directives (s. 184)",
+      "The Minister and Director can make policies to which Part III (Regulations) of the Legislation Act, 2006 does not apply"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 8,
-    "question": "Which InstitutionalActors have supervisory powers over Facilities?",
-    "reference_answer": "At least 4 InstitutionalActors (or actors with supervisory powers) are connected to Facilities: Director (issues compliance orders, approval decisions, licence actions), Inspector (conducts inspections and issues compliance orders), Continuous Quality Improvement Committee (administrative body governing Long-Term Care Homes, added by O. Reg. 246/22), and at least one additional actor. There are at least 6 distinct facility-level relationships. Note: Director, Inspector, and Minister are modelled as Role nodes rather than InstitutionalActor nodes in the ontology, which means a query restricted to the InstitutionalActor label may miss them.",
-    "grading_criteria": {
-      "excellent": [
-        "Identifies at least 3 distinct supervisory actors",
-        "Includes the Continuous Quality Improvement Committee from the regulation",
-        "Notes or accounts for the Role vs. InstitutionalActor taxonomy distinction",
-        "Gives at least one specific supervisory power per actor"
-      ],
-      "good": [
-        "Identifies 2–3 actors with supervisory powers",
-        "Accurate for what it covers",
-        "May miss the CQI Committee or the taxonomy distinction"
-      ],
-      "partial": "Identifies only 1 actor or lists actors without describing any supervisory powers.",
-      "weak": "Incorrect actors, no powers identified, or empty result."
+    "generated_at": "2026-06-10T20:17:32.528063+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 75.03,
+    "usage": {
+      "inputTokens": 72845,
+      "cacheWriteInputTokens": 30313,
+      "cacheReadInputTokens": 83530,
+      "outputTokens": 4869
     },
-    "key_facts": [
-      "Continuous Quality Improvement Committee added by O. Reg. 246/22",
-      "At least 4 actors and 6 distinct facility relationships",
-      "Director, Inspector, and Minister are Role nodes not InstitutionalActor nodes (ontology design choice)"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 9,
-    "question": "Show me the full normative structure for the Licensee role — what Obligations, Prohibitions, and Rights apply to them?",
-    "reference_answer": "The Licensee's normative structure comprises approximately 100 Obligations, 80 Prohibitions, and 19 Rights. Key obligations from the regulation include: staffing minimums (Administrator on-site hours by bed capacity, DNPC qualifications and hours, Medical Director written agreement); police record check obligations; PSW transitional workforce obligations; admission obligations under ss.240.1–240.5; maximum accommodation charge obligations (ss.291–295); trust account obligations; non-arm's-length procurement records; and duty to operate in the public interest. Key prohibitions include financial prohibitions with section references (s.286(4)(a)–(c) for trust accounts including $5,000 cap per resident and no commingling; s.289 paras 1–8 for prohibited charges; ss.290–295 for maximum charge limits); prohibition on AC installation/removal against resident wishes; prohibition on continence products as substitute for toileting; prohibition on physical device in resident's bed; and prohibition on discharge during emergency or outbreak. Rights include 6 distinct discharge rights, admission approval withdrawal on change of condition, and exemption from website requirement for small homes without internet.",
-    "grading_criteria": {
-      "excellent": [
-        "Returns at least 80 Obligations",
-        "Returns at least 40 Prohibitions (complete answer has ~80)",
-        "Returns at least 10 Rights (complete answer has ~19)",
-        "Includes financial prohibitions with section references (s.286(4), s.289, ss.290–295)",
-        "Includes staffing minimums from the regulation (Administrator hours, DNPC, Medical Director)"
-      ],
-      "good": [
-        "Returns 50–79 obligations and 20–39 prohibitions",
-        "Covers main Obligation/Prohibition/Right categories even if counts are lower",
-        "May miss financial prohibitions detail or regulation-sourced additions"
-      ],
-      "partial": "Returns fewer than 50 obligations or fewer than 10 prohibitions, or fails to distinguish between Obligation, Prohibition, and Right types.",
-      "weak": "Very sparse result, major categories absent, or conflates normative types."
-    },
-    "key_facts": [
-      "~100 obligations, ~80 prohibitions, ~19 rights in the full Act + Regulation graph",
-      "s.286(4)(a)–(c): trust account prohibitions including $5,000 cap and no commingling",
-      "s.289 paras 1–8: prohibited charges",
-      "ss.290–295: maximum charge limits",
-      "6 distinct discharge rights",
-      "Staffing minimums: Administrator on-site hours, DNPC hours and qualifications, Medical Director written agreement"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 10,
-    "question": "What is the complete chain from a resident complaint to a sanction being issued?",
-    "reference_answer": "The complete chain follows 6 escalating stages governed by Part X — Compliance and Enforcement of the Act: (1) Written notification to the Licensee; (2) Compliance order issued; (3) Administrative penalty assessed — $25,000 for a first s.23.1(1) failure, $1,100–$11,000 for regulatory breaches; (4) Funding orders (reduction or withholding, issued by Director or Minister); (5) Management order — Minister appoints a manager to run the home; (6) Licence suspension or revocation. The Supervisor appointment is an additional end-stage tool. Appeals at each stage run to the Health Services Appeal and Review Board.",
-    "grading_criteria": {
-      "excellent": [
-        "Identifies at least 5 of the 6 stages in correct order",
-        "Names Part X — Compliance and Enforcement as the governing part",
-        "Includes specific penalty amounts ($25,000, $1,100–$11,000) from the regulation",
-        "Mentions the Appeal Board as the review mechanism at each stage"
-      ],
-      "good": [
-        "Identifies at least 4 stages in broadly correct order",
-        "Accurate for what it covers",
-        "May omit penalty specifics or the Part X reference"
-      ],
-      "partial": "Identifies 2–3 stages but misses major steps or presents them out of order.",
-      "weak": "Only identifies 1 stage or describes a different process entirely."
-    },
-    "key_facts": [
-      "6-stage escalating ladder",
-      "Part X — Compliance and Enforcement",
-      "$25,000 first-violation administrative penalty",
-      "Management order precedes suspension/revocation",
-      "Health Services Appeal and Review Board at each stage"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 11,
-    "question": "How is the Director connected to a Resident — what is the shortest path of relationships?",
-    "reference_answer": "The shortest path from Director to Resident is 2 hops. At least 4 distinct 2-hop paths exist: (1) Director → [relates to] → Critical Incident Immediate Notification Process → [involves] → Resident; (2) Director → [relates to] → One Business Day Incident Notification Process → [involves] → Resident; (3) Director → [relates to] → Accommodation Charge Reduction → [applies to] → Resident; (4) a fourth path via another process or obligation. The structural insight is that the Director never acts directly on a Resident — all paths are mediated through a process, obligation, or instrument node.",
-    "grading_criteria": {
-      "excellent": [
-        "States that the shortest path is 2 hops",
-        "Identifies at least 3 distinct 2-hop paths",
-        "Includes the Critical Incident Immediate Notification Process and One Business Day Incident Notification Process paths",
-        "Notes the structural observation that Director never acts directly on Resident"
-      ],
-      "good": [
-        "States shortest path is 2 hops",
-        "Identifies at least 2 distinct paths",
-        "May omit the regulation-sourced notification process paths"
-      ],
-      "partial": "Finds a path but states an incorrect hop count, or finds only 1 path without noting others exist.",
-      "weak": "Cannot find a valid path or states an incorrect hop count with no supporting evidence."
-    },
-    "key_facts": [
-      "Shortest path is 2 hops",
-      "At least 4 distinct 2-hop paths",
-      "Critical Incident Immediate Notification Process path (from regulation)",
-      "One Business Day Incident Notification Process path (from regulation)",
-      "Director never acts directly on Resident — always mediated"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 12,
-    "question": "What specifically is a Licensee required to report to the Director?",
-    "reference_answer": "A Licensee must report to the Director across approximately 10 categories: (1) Incident reports with tiered timelines — immediate for critical incidents, within 1 business day for certain incidents, within 3 business days for significant health change injury incidents, within 10 days for the written incident report and the abuse/neglect final report; (2) Annual Report under s.284(1) with required content specified in s.284(2); (3) Annual Attestation under s.270(3); (4) Monthly PSW qualification records (transitional workforce obligations); (5) Key Personnel name and contact information under s.285; (6) Medication incidents and adverse drug reactions; (7) After-hours emergency contact procedure; (8) Closure Plan at least 14 months before closure; (9) Air conditioning information reports; (10) Preliminary and final abuse reports as distinct reporting obligations.",
-    "grading_criteria": {
-      "excellent": [
-        "Covers at least 7 of the 10 reporting categories",
-        "Correctly states the tiered incident timelines (immediate, 1 business day, 3 business days, 10 days)",
-        "Includes Annual Report (s.284) and Annual Attestation (s.270(3))",
-        "Includes the 14-month Closure Plan requirement"
-      ],
-      "good": [
-        "Covers 4–6 categories",
-        "Gets the incident reporting tiers broadly right",
-        "May omit Annual Attestation, PSW records, or the Closure Plan"
-      ],
-      "partial": "Covers 2–3 categories without the tiered timeline structure for incident reports.",
-      "weak": "Only mentions one type of report or provides only vague generalities about reporting."
-    },
-    "key_facts": [
-      "Immediate reporting for critical incidents",
-      "1 business day for certain incident types",
-      "3 business days for significant health change injury incidents",
-      "10 days for written incident report and abuse/neglect final report",
-      "Annual Report s.284(1) and Annual Attestation s.270(3)",
-      "Closure Plan required at least 14 months before closure",
-      "s.285 Key Personnel name and contact"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 13,
-    "question": "What does the Act prohibit a Licensee from doing to a resident?",
-    "reference_answer": "The Act and Regulation prohibit a Licensee from approximately 80 actions toward residents, organized in 9 categories: (1) Physical/restraint prohibitions — applying a physical device to a resident in bed; using continence products as a substitute for toileting; (2) Abuse and neglect prohibitions; (3) Privacy and dignity violations; (4) Financial prohibitions — s.289 paras 1–8 (prohibited charges), s.286(4)(a)–(c) (trust account prohibitions: $5,000 cap per resident, no commingling of funds, no transaction fees), ss.290–295 (maximum charge limits); (5) Discharge prohibitions — 4 specific no-discharge situations including during an emergency or outbreak; (6) Environmental prohibitions — AC installation or removal against resident wishes; (7) Communication and information prohibitions; (8) Access prohibitions; (9) Reprisal prohibitions. The financial prohibition category was substantially expanded by the regulation.",
-    "grading_criteria": {
-      "excellent": [
-        "Covers at least 6 of the 9 prohibition categories",
-        "Includes financial prohibitions with specific section references (s.289, s.286(4), ss.290–295)",
-        "States the $5,000 trust fund cap per resident and no-commingling rule",
-        "Includes all 4 no-discharge situations",
-        "Includes the AC installation/removal prohibition"
-      ],
-      "good": [
-        "Covers 4–5 categories",
-        "Includes at least some financial prohibitions",
-        "May omit specific section references but gets the main categories"
-      ],
-      "partial": "Covers 2–3 categories; likely misses financial prohibitions — the largest category added by the regulation.",
-      "weak": "Only one category covered or gives vague descriptions not grounded in the Act/Regulation."
-    },
-    "key_facts": [
-      "s.289 paras 1–8: prohibited charges",
-      "s.286(4)(a)–(c): trust account prohibitions",
-      "$5,000 cap per resident in trust accounts",
-      "No commingling of trust funds, no transaction fees",
-      "4 no-discharge situations (including during emergency/outbreak)",
-      "~80 prohibitions total in the full Act + Regulation graph"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 14,
-    "question": "Who is responsible for investigating a complaint about abuse?",
-    "reference_answer": "The Licensee bears primary legal responsibility for investigating complaints about abuse. The Director is the oversight recipient — the Licensee must report investigation results to the Director. The regulation added the obligation to notify the Resident and their Substitute Decision-Maker of investigation results. The Director of Care has an operational role in practice but is not modelled as a distinct entity in the graph (the ontology does not distinguish Director of Care from other role types). This is a graph granularity limitation, not an error.",
-    "grading_criteria": {
-      "excellent": [
-        "Correctly identifies the Licensee as the primary responsible party for investigation",
-        "Identifies the Director as the oversight recipient (receives reports, not the primary investigator)",
-        "Includes the obligation to notify the Resident and Substitute Decision-Maker (from the regulation)"
-      ],
-      "good": [
-        "Correctly identifies Licensee and Director",
-        "May omit the SDM notification obligation"
-      ],
-      "partial": "Identifies the Director as the investigator — incorrect; Director is oversight recipient, not primary investigator.",
-      "weak": "Cannot identify the responsible parties or gives a clearly incorrect answer attributing investigation to the wrong entity."
-    },
-    "key_facts": [
-      "Licensee has primary legal responsibility for investigation",
-      "Director is the oversight recipient — receives reports, does not conduct the investigation",
-      "Resident and Substitute Decision-Maker must be notified of investigation results (from regulation)",
-      "Director of Care has an operational role but is not a distinct graph entity"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
-  },
-  {
-    "index": 15,
-    "question": "What standards must a long-term care home comply with?",
-    "reference_answer": "Long-term care homes must comply with standards from multiple sources: (1) Act-based operational standards embedded in the Act's requirements; (2) College of Nurses of Ontario Practice Standards and Guidelines (O. Reg. 246/22); (3) Director Standards and Protocols for Infection Prevention and Control (O. Reg. 246/22); (4) Director Surveillance Protocols for Communicable Disease (O. Reg. 246/22); (5) Manufacturer Specifications for Cleaning and Disinfection; (6) Written Program Description Standard (O. Reg. 246/22); (7) Organised Interdisciplinary Restorative Care Program standards. Standards should be attributed to their source instrument — Act or O. Reg. 246/22. Note: the specific 4 hours/day direct care and 36 minutes/day allied health numeric targets exist in the regulation but may not be captured as named Standard nodes in the graph.",
-    "grading_criteria": {
-      "excellent": [
-        "Covers at least 5 distinct standards",
-        "Includes the College of Nurses of Ontario Practice Standards and Guidelines",
-        "Includes the Director IPAC Standards and Director Communicable Disease Surveillance Protocols",
-        "Attributes standards to both the Act and O. Reg. 246/22 by name"
-      ],
-      "good": [
-        "Covers 3–4 distinct standards",
-        "Includes at least one regulation-sourced standard",
-        "May miss CNO standards or Manufacturer Specifications"
-      ],
-      "partial": "Covers 1–2 standards; likely misses all regulation-sourced standards.",
-      "weak": "Cannot identify specific named standards, or gives only a generic description of 'compliance with all applicable standards'."
-    },
-    "key_facts": [
-      "College of Nurses of Ontario Practice Standards and Guidelines (O. Reg. 246/22)",
-      "Director Standards and Protocols for Infection Prevention and Control (O. Reg. 246/22)",
-      "Director Surveillance Protocols for Communicable Disease (O. Reg. 246/22)",
-      "Manufacturer Specifications for Cleaning and Disinfection",
-      "Written Program Description Standard (O. Reg. 246/22)",
-      "4 hrs/day direct care target exists in regulation but may not be captured as a named Standard node"
-    ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "cost": 2.1515137499999994
   }
 ]

@@ -14,7 +14,7 @@ FLTCA_QUESTIONS: list[str] = [
     "What are all the rights that residents hold under this Act?",
     "What are all the grounds under which a licence can be suspended or revoked?",
     "List every type of document a Licensee is required to maintain.",
-    "What are all the subtypes of LegalInstrument, and which parties can issue each one?",
+    "What are all the types of legal instruments referenced in this Act and its regulations, and who can issue each one?",
     "Which InstitutionalActors have supervisory powers over Facilities?",
     "Show me the full normative structure for the Licensee role — what Obligations, "
     "Prohibitions, and Rights apply to them?",
