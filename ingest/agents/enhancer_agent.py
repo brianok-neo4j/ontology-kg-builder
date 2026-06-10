@@ -210,6 +210,15 @@ MATCH (parent:EntityType {entityLabel: 'Security'})
 MERGE (child)-[:SUBCLASS_OF]->(parent)
 ```
 
+**The IS-A test:** only create SUBCLASS_OF when every instance of the child
+is also a valid instance of the parent. Ask: *"Is a [child] a kind of
+[parent]?"* — if the answer requires qualification or is only true in a
+limited sense, the relationship is not IS-A. Shared attributes are NOT
+sufficient: a PhysicalDevice is not a Concept merely because it is defined
+by statute; a Facility is not a Role merely because it bears obligations.
+"Both types are formally defined" or "both appear in the same section" are
+attribute similarities, not IS-A relationships.
+
 ### 4. Jurisdiction- or organization-specific labels
 Entity labels should be reusable across jurisdictions and contexts. If any
 EntityType label embeds a place name, jurisdiction, or organization name, it is
