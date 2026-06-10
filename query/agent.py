@@ -29,7 +29,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
-from shared.neo4j_tools import _run, describe_ontology, find_entities_by_name
+from shared.neo4j_tools import _decode_instance_properties, _run, describe_ontology, find_entities_by_name
 from ingest.tools import get_ontology_schema
 from query.tools import run_read_cypher
 
@@ -121,13 +121,14 @@ def _fetch_ontology_schema_json() -> str:
     prompt recovered ~half the grade gap to the denser prior graph).
     """
     field = "full_description"
-    entity_types = _run(
+    entity_types = _decode_instance_properties(_run(
         f"""
         MATCH (e:EntityType)
-        RETURN e.entityLabel AS entityLabel,
-               e.{field} AS description
+        RETURN e.entityLabel          AS entityLabel,
+               e.{field}              AS description,
+               e.instance_properties  AS instance_properties
         """
-    )
+    ))
     rels = _run(
         f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)

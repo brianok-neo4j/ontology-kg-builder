@@ -6,7 +6,7 @@ import json
 
 from strands import tool
 
-from shared.neo4j_tools import _run
+from shared.neo4j_tools import _decode_instance_properties, _run
 
 
 @tool
@@ -26,13 +26,14 @@ def get_ontology_schema() -> str:
           relationships - list of {from_entityLabel, relLabel, to_entityLabel, description}
     """
     field = "full_description"
-    entity_types = _run(
+    entity_types = _decode_instance_properties(_run(
         f"""
         MATCH (e:EntityType)
-        RETURN e.entityLabel AS entityLabel,
-               e.{field} AS description
+        RETURN e.entityLabel          AS entityLabel,
+               e.{field}              AS description,
+               e.instance_properties  AS instance_properties
         """
-    )
+    ))
     rels = _run(
         f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)

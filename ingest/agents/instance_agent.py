@@ -26,7 +26,7 @@ import json
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 
-from shared.neo4j_tools import _run, describe_ontology, read_cypher, snapshot_description_field, write_cypher
+from shared.neo4j_tools import _decode_instance_properties, _run, describe_ontology, read_cypher, snapshot_description_field, write_cypher
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -151,9 +151,27 @@ worse than a missing one. Within that bound, be exhaustive.
    retried for you automatically, so never re-issue a write just because it was
    slow — only retry if `write_cypher` returns a string beginning with 'ERROR:'.
 
-9. **After the write-cypher tool executes successfully, stop immediately.** Do
-   not produce any closing text, confirmation, or summary. Silence after the
-   tool call is correct behaviour.
+9. For each entity node, also extract any properties listed in the
+   `instance_properties` field of its EntityType (shown in the schema snapshot
+   under each EntityType entry). Only SET a property when the chunk text
+   **explicitly states** the value — never infer or fabricate. Omit properties
+   whose values are not present in the text. Include them in the same `SET`
+   clause as any other scalar properties:
+
+   ```cypher
+   // EntityType 'Obligation' has instance_properties: {"section_ref": "..."}
+   MERGE (ob:Obligation {name: 'operator duty to maintain safe environment'})
+   SET ob.section_ref = 's. 42(1)'
+   ```
+
+   This rule is generic — it applies to every EntityType that has an
+   `instance_properties` entry. The set of properties differs per dataset
+   (legal documents have section numbers; accident reports have tail numbers;
+   clinical documents have dosage codes) but the extraction rule is the same.
+
+10. **After the write-cypher tool executes successfully, stop immediately.** Do
+    not produce any closing text, confirmation, or summary. Silence after the
+    tool call is correct behaviour.
 """
 
 _SUMMARY_INSTRUCTION = (
@@ -169,13 +187,14 @@ def _fetch_ontology_schema_json() -> str:
     `description`. Full text is always available via the `describe_ontology` tool.
     """
     field = snapshot_description_field()
-    entity_types = _run(
+    entity_types = _decode_instance_properties(_run(
         f"""
         MATCH (e:EntityType)
-        RETURN e.entityLabel AS entityLabel,
-               e.{field} AS description
+        RETURN e.entityLabel          AS entityLabel,
+               e.{field}              AS description,
+               e.instance_properties  AS instance_properties
         """
-    )
+    ))
     rels = _run(
         f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)

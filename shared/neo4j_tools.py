@@ -42,6 +42,25 @@ def _run(query: str, params: dict | None = None) -> list[dict]:
         return [dict(r) for r in result]
 
 
+def _decode_instance_properties(entity_types: list[dict]) -> list[dict]:
+    """Parse the instance_properties JSON string on EntityType query rows in-place.
+
+    Neo4j stores instance_properties as a JSON string. This helper decodes it to
+    a dict so the schema snapshot contains a proper nested object. Rows that have
+    no instance_properties (None / missing) are left unchanged. Returns the list.
+    """
+    for et in entity_types:
+        raw = et.get("instance_properties")
+        if raw:
+            try:
+                et["instance_properties"] = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                del et["instance_properties"]
+        elif "instance_properties" in et:
+            del et["instance_properties"]
+    return entity_types
+
+
 def snapshot_description_field() -> str:
     """Which description field the per-chunk ontology snapshots embed.
 

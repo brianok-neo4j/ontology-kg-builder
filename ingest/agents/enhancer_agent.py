@@ -40,7 +40,7 @@ from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.tools.mcp import MCPClient
 
-from shared.neo4j_tools import _run
+from shared.neo4j_tools import _decode_instance_properties, _run
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 
@@ -66,11 +66,16 @@ fine via read_neo4j_cypher.)
 ## Graph model (read this first)
 
 The ontology is stored using two graph elements:
-  - `:EntityType` — a node, with properties `entityLabel`, `short_description`
-    (a ≤12-word phrase) and `full_description` (the complete definition).
+  - `:EntityType` — a node, with properties:
+      - `entityLabel`        — the label name (PascalCase)
+      - `short_description`  — ≤12-word phrase
+      - `full_description`   — complete definition
+      - `instance_properties` — optional JSON string: `{"prop": "hint", ...}`
+        listing scalar properties the instance agent should extract for every
+        node of this type (e.g. `{"section_ref": "statutory citation"}`,
+        `{"tail_number": "FAA registration number"}`)
   - `:RelType`    — a **relationship** between two `:EntityType` nodes, with
-    properties `relLabel` (e.g. `"SUBCLASS_OF"`, `"SAME_AS"`), `short_description`
-    and `full_description`.
+    properties `relLabel`, `short_description` and `full_description`.
 
 The snapshot below gives you the `full_description` of each type/relationship so
 you can judge equivalence. Whenever you create or update a type/edge you MUST set
@@ -168,7 +173,14 @@ from their `description` fields, not just their labels (e.g. "CEO" and
 either:
   a) Merging: copy any RelType edges from one to the other, then delete the
      redundant EntityType node. Update the surviving node's `description` if
-     needed so it reflects the combined concept.
+     needed so it reflects the combined concept. Also merge their
+     `instance_properties`: combine the property dicts from both nodes into a
+     single JSON string on the surviving node (union of keys; surviving node's
+     hint wins on conflict):
+     ```cypher
+     MATCH (e:EntityType {entityLabel: 'Survivor'})
+     SET e.instance_properties = '{"section_ref": "...", "effective_date": "..."}'
+     ```
   b) Linking: add a direct `[:SAME_AS]` relationship between them when both
      forms should be preserved for traceability (NOT a RelType edge with
      relLabel='SAME_AS'):
@@ -252,14 +264,15 @@ def _fetch_ontology_snapshot() -> dict:
     stored as direct Neo4j relationship types — not as RelType edges — so they are
     fetched separately and included under dedicated keys.
     """
-    entity_types = _run(
+    entity_types = _decode_instance_properties(_run(
         """
         MATCH (e:EntityType)
-        RETURN e.entityLabel AS entityLabel,
-               e.full_description AS description
+        RETURN e.entityLabel          AS entityLabel,
+               e.full_description     AS description,
+               e.instance_properties  AS instance_properties
         ORDER BY e.entityLabel
         """
-    )
+    ))
     rels = _run(
         """
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)
