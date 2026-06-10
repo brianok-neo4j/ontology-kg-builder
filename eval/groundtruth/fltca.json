@@ -2,199 +2,270 @@
   {
     "index": 1,
     "question": "What sanctions can result from a failed inspection, and who can issue them?",
-    "reference_answer": "Sanctions from a failed inspection form an escalating ladder: (1) written notification orders (Inspector); (2) compliance orders (Inspector or Director); (3) administrative penalties — $25,000 for a first s.23.1(1) failure, structured fixed amounts for repeat violations, $1,100–$11,000 for various regulatory breaches with $11,000 specifically for failures in key staffing roles (Administrator, DNPC, Medical Director); (4) Re-Inspection Fee (a distinct sanction type added by the regulation); (5) funding reduction or withholding orders (Director or Minister); (6) management orders (Minister appoints a manager); (7) licence suspension (Director or Minister); (8) licence revocation (Director or Minister); (9) appointment of a Supervisor. The issuer hierarchy is Inspector → Director → Minister, with the Superior Court of Justice enforcing court orders.",
+    "reference_answer": "Under Ontario's Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and its General regulation (O. Reg. 246/22), a range of sanctions can follow when an inspection finds that a licensee has not complied with a requirement under the Act. Section 154 sets out the core actions an INSPECTOR must take where non-compliance is found — the inspector must do at least one of the following, as the inspector considers appropriate: (1) issue a written notification to the licensee; (2) make an order under section 155; (3) issue a notice of administrative penalty under section 158; or (4) issue a written notification AND refer the matter to the DIRECTOR for further action. (Where the licensee remedied the non-compliance during the inspection, the inspector's obligations may be modified.)\n\nSANCTIONS / ENFORCEMENT TOOLS:\n- Written notification to the licensee.\n- Compliance orders under section 155 (e.g., an order requiring the licensee to comply, or to prepare and implement a written plan for achieving compliance). Orders may also be made/escalated by the Director, and additional orders exist in sections 155 to 161 (referenced as enforceable through the courts). Inspectors' and the Director's orders against a home must be made public (posted/included in the information package).\n- Administrative penalties (monetary penalties) under section 158: an inspector OR the Director may issue a written notice of administrative penalty (AMP) requiring the licensee to pay a penalty where the inspector or Director is of the opinion the licensee has not complied with a requirement. The amount must not exceed $250,000 per failure, is determined in accordance with the regulations, and must reflect the penalty's purpose (promoting compliance). The amount must be reduced if it would be excessive or punitive. AMPs cannot be issued more than two years after the failure first came to the knowledge of an inspector or Director. The regulation (O. Reg. 246/22, s. 349) sets escalating AMP amounts for repeat failures (a multiple of the Table amount — e.g., double for a second failure, triple for a third, four times for a fourth, five times for each subsequent failure), and an inspector OR the Director MUST issue an AMP in certain situations, such as where a licensee fails to comply with a section 155 order, or where a failure leads to a section 155 order and the licensee had a similar failure within the preceding three years.\n- Penalties are paid to the Minister of Finance; unpaid penalties become a Crown debt and a copy of the order/notice may be filed with the Superior Court of Justice and enforced as a court order (with post-judgment interest under the Courts of Justice Act).\n\nWHO CAN ISSUE THEM:\n- INSPECTORS (appointed by the Minister; the Director is by virtue of office also an inspector) issue written notifications, make section 155 orders, and issue notices of administrative penalty.\n- The DIRECTOR can take 'further action,' make/alter orders, and issue notices of administrative penalty. On a review, the Director may rescind, confirm or alter an inspector's order or AMP, or substitute their own. The Minister appoints inspectors and the Director.\n\nADDITIONAL ENFORCEMENT (beyond the inspection-response actions): Separate from the section 154/155/158 stream, the Director also has power (e.g., under section 56) to direct that admissions to a home cease where there is a risk of harm, and various contraventions of the Act are OFFENCES that can be prosecuted in court (e.g., abuse/neglect, obstruction of inspectors, failure to make mandatory reports), resulting in fines on conviction.\n\nREVIEW/APPEAL: A licensee may request the Director to review an inspector's order or AMP within 28 days (no automatic stay of an order; the requirement to pay an AMP is stayed pending review), and decisions can be appealed to the Appeal Board and ultimately the courts.",
     "grading_criteria": {
       "excellent": [
-        "Identifies specific dollar amounts: $25,000 for first s.23.1(1) failure, $1,100–$11,000 range, $11,000 for Administrator/DNPC/Medical Director",
-        "Names all issuer roles: Inspector, Director, Minister, and Superior Court",
-        "Includes Re-Inspection Fee as a distinct sanction type",
-        "Covers the full escalating ladder from written notice through suspension/revocation to Supervisor appointment",
-        "Correctly maps which sanctions each issuer can issue"
+        "Must identify the four inspector actions under section 154 for non-compliance: (1) written notification, (2) order under section 155, (3) notice of administrative penalty under section 158, (4) written notification plus referral to the Director",
+        "Must state that administrative penalties can be up to $250,000 per failure",
+        "Must correctly state WHO can issue sanctions: an inspector AND the Director can issue them (and note the Minister appoints inspectors / the Director is also an inspector by virtue of office)",
+        "Should mention escalation for repeat failures and/or mandatory AMPs in certain cases (e.g., failure to comply with a section 155 order, or repeat failure within three years)",
+        "Should reference at least one enforcement consequence (penalties paid to Minister of Finance, filing with Superior Court of Justice as a Crown debt) or the review/appeal mechanism (28-day review to Director; Director may rescind/confirm/alter)"
       ],
       "good": [
-        "Covers the main sanction types without all specific dollar amounts",
-        "Identifies at least Inspector, Director, and Minister as issuers",
-        "Describes the escalating nature of sanctions"
+        "Correctly identifies the main sanctions: written notification, compliance order (s.155), and administrative penalty (s.158)",
+        "Correctly states that both inspectors and the Director can issue sanctions",
+        "Includes the $250,000 penalty cap (approximate figure acceptable)",
+        "May miss the escalation/repeat-failure detail or court-enforcement mechanics"
       ],
-      "partial": "Identifies some sanction types but misses most issuers or omits the escalating structure entirely.",
-      "weak": "Vague or incorrect — fails to distinguish sanction types, conflates issuers, or provides no specific detail."
+      "partial": "Names some sanctions (e.g., orders or penalties) but is vague about who issues them, omits the $250,000 figure, or conflates the inspector and Director roles without distinguishing the four section 154 options.",
+      "weak": "Fails to identify the actual sanctions, invents penalties/amounts not in the Act, or wrongly attributes issuing authority (e.g., claims only a court or the Minister issues all sanctions) — or answers generically without reference to the Act's enforcement scheme."
     },
     "key_facts": [
-      "$25,000 for first s.23.1(1) failure",
-      "$1,100–$11,000 range for regulatory breaches",
-      "$11,000 for Administrator, DNPC, and Medical Director role failures",
-      "Re-Inspection Fee is a distinct sanction type",
-      "Issuer hierarchy: Inspector → Director → Minister → Superior Court"
+      "Section 154: an inspector who finds non-compliance must do at least one of four things — issue a written notification, make a section 155 order, issue a notice of administrative penalty under section 158, or issue a written notification and refer the matter to the Director",
+      "Administrative penalty (AMP) amount shall not exceed $250,000 per failure (s.158(3))",
+      "Both an inspector OR the Director may issue a notice of administrative penalty (s.158(1))",
+      "AMP amounts escalate for repeat failures (e.g., double, triple, four times, five times the Table amount for subsequent failures) under O. Reg. 246/22 s.349",
+      "An inspector or the Director MUST issue an AMP where a licensee fails to comply with a section 155 order, or where a failure leads to a section 155 order and a similar failure occurred within the preceding three years",
+      "Inspectors are appointed by the Minister, and the Director is an inspector by virtue of office (s.144)",
+      "Administrative penalties are paid to the Minister of Finance; unpaid penalties are a Crown debt and may be filed with the Superior Court of Justice and enforced as a court order",
+      "Orders under sections 155 to 161 (and the Director's review decisions) may be filed with the court and enforced",
+      "A licensee may request the Director to review an inspector's order or AMP within 28 days; on review the Director may rescind, confirm or alter the order/notice or substitute their own"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:25:07.711711+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 69.15,
+    "usage": {
+      "inputTokens": 91927,
+      "cacheWriteInputTokens": 39762,
+      "cacheReadInputTokens": 149201,
+      "outputTokens": 4348
+    },
+    "cost": 2.6743439999999996
   },
   {
     "index": 2,
     "question": "What processes must a Licensee participate in before a licence can be revoked?",
-    "reference_answer": "Before a licence can be revoked, the Licensee must participate in a staged process: (1) Inspection and Compliance — the triggering compliance event; (2) Review of Order — the Licensee may request a review within 28 days of an order under s.169; (3) Appeal to the Health Services Appeal and Review Board — 28-day notice period, with the hearing required to start within 90 days (ss.170–171); (4) Records Transfer obligations that apply post-revocation. Critically, the revocation order does not take effect until the appeal period has expired or the appeal has been decided. The Statutory Powers Procedure Act procedural rights are referenced in the Act, but an explicit 'Notice of Proposal' pre-decision step is not modelled in the graph.",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1), the power to revoke a licence rests with the Director under section 159, but a revocation does not take effect until the licensee has had the opportunity to participate in the Act's review and appeal processes. The key processes are:\n\n1. Inspection / inquiry and compliance steps that establish grounds. Revocation under section 159 may only occur on stated grounds — for example, where the licensee has not complied with a requirement under the Act, or where a false statement was made in the application or in a required report or document. These grounds typically arise out of inspections and inquiries (e.g., under section 29) and the compliance-order regime (sections 154–155), in which the licensee may already have been ordered to prepare and follow a written plan for achieving compliance.\n\n2. The section 159 order itself. The Director makes an order suspending or revoking the licence, and the order is served on the licensee. A suspension order takes effect immediately upon the licensee being served with a copy of the order; a revocation order, by contrast, takes effect only upon the expiry of the period for appealing the order under section 171 (subject to section 25 of the Statutory Powers Procedure Act if the order is appealed). This means the licensee must be given the chance to go through the appeal process before a revocation becomes effective.\n\n3. Review by the Director (section 170). The licensee may request a review of the order by the Director. The request for review must set out the portions of the order being challenged, any submissions the licensee wishes the Director to consider, and an address for service. The Director then confirms, rescinds, or amends the order. (For most orders a request for review does not automatically stay the order unless the Director orders otherwise.)\n\n4. Appeal to the Appeal Board (section 171). The licensee may appeal the order by serving a notice of appeal within 28 days of being served with a copy of the order (or the Director's decision on a review). Because a revocation order only takes effect after the appeal period expires, the licensee effectively participates in — or at least has the opportunity to participate in — this hearing before the Health Services Appeal and Review Board before losing the licence. Note that, while an appeal does not normally stay an order, the special non-stay rule does not displace the rule that a revocation takes effect only at the end of the appeal period.\n\n5. Further appeal to the Divisional Court (section 176). Any party to the Appeal Board proceeding may appeal the Board's decision to the Divisional Court.\n\nIn short, before a licence can actually be revoked, the licensee is entitled to be served with the Director's order (with reasons), to request a review of the order by the Director under section 170, and to appeal the order to the Appeal Board under section 171 (with a further right of appeal to the Divisional Court under section 176) — and a revocation order does not take effect until the appeal period under section 171 has expired.",
     "grading_criteria": {
       "excellent": [
-        "Identifies the Review of Order process with 28-day window and s.169 citation",
-        "Identifies the Appeal Board process with 28-day notice period and 90-day hearing start (ss.170–171)",
-        "States that the revocation order does not take effect until the appeal period expires",
-        "Presents the stages in correct sequential order"
+        "Must identify that revocation is a Director's order under section 159, made on stated grounds (e.g., non-compliance with a requirement under the Act, or a false statement in the application/report)",
+        "Must explain that a revocation order takes effect only upon expiry of the period for appealing under section 171, meaning the licensee gets to go through the appeal process first (contrast with a suspension, which takes effect immediately on service)",
+        "Must identify the licensee's right to a review by the Director (section 170), including the ability to make submissions, AND the right of appeal to the Appeal Board (Health Services Appeal and Review Board) under section 171 (notice of appeal within 28 days of service)",
+        "Should mention the licensee is served with a copy of the order (with reasons), and may further appeal to the Divisional Court (section 176)"
       ],
       "good": [
-        "Identifies at least two of the three main stages (compliance, review, appeal)",
-        "Notes that an appeal mechanism exists",
-        "May omit specific timeframes but gets the structure right"
+        "Correctly identifies that the Director makes the revocation order under section 159 and that the licensee has review and/or appeal rights before it takes effect",
+        "Mentions at least one of: review by the Director (s.170) or appeal to the Appeal Board (s.171), and notes the order is served on the licensee",
+        "May miss the 28-day timeline or the Divisional Court step, or may not precisely distinguish suspension (immediate effect) from revocation (effect after appeal period)"
       ],
-      "partial": "Mentions appeal rights but misses specific timeframes or conflates the review and appeal stages.",
-      "weak": "Fails to identify a multi-stage process, describes only a single step, or gives incorrect stages."
+      "partial": "Names that a licence is revoked by the Director and that there is some appeal/review right, but is vague about the processes — e.g., omits both the Director's review (s.170) and the Appeal Board appeal (s.171), or only gestures at 'an appeal' without grounds, service, or the timing of when revocation takes effect.",
+      "weak": "Fails to identify the section 159 revocation order or the review/appeal processes, confuses revocation with other actions (e.g., placement-co-ordinator designation revocation or specialized-unit designation), or fabricates processes not in the Act."
     },
     "key_facts": [
-      "28-day window for Review of Order (s.169)",
-      "28-day notice period for Appeal Board",
-      "90-day hearing start requirement (ss.170–171)",
-      "Revocation does not take effect during the appeal period",
-      "Records Transfer obligations apply post-revocation"
+      "Revocation (and suspension) of a licence is done by the Director under section 159",
+      "Grounds include the licensee not complying with a requirement under the Act, or a false statement being made in the licence application or in a required report/document",
+      "A revocation order takes effect upon the expiry of the period for appealing the order under section 171 (subject to s.25 of the Statutory Powers Procedure Act if appealed)",
+      "A suspension order, by contrast, takes effect immediately upon the licensee being served with a copy of the order",
+      "The licensee may request a review of the order by the Director under section 170, including submissions and an address for service",
+      "The licensee may appeal the order to the Appeal Board (Health Services Appeal and Review Board) under section 171 by serving a notice of appeal within 28 days of being served",
+      "A further appeal to the Divisional Court is available under section 176",
+      "The order is served on the licensee, and inspections/inquiries (s.29) and compliance orders/plans (ss.154–155) typically establish the grounds beforehand"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:26:10.798961+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 63.09,
+    "usage": {
+      "inputTokens": 72841,
+      "cacheWriteInputTokens": 29116,
+      "cacheReadInputTokens": 84254,
+      "outputTokens": 3813
+    },
+    "cost": 2.0508960000000003
   },
   {
     "index": 3,
-    "question": "Which obligations does a Role have that are conditioned on a prior process completing?",
-    "reference_answer": "Multiple roles have obligations conditioned on prior processes. The correct traversal is through Obligation nodes: Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process. Roles with conditioned obligations include: Director (conditioned on e.g. Deemed Same Licensee Operation Request), Licensee (various obligations conditioned on admission and care processes), Minister, Placement Co-ordinator (conditioned on Eligibility Determination), Rights Adviser, and Staff. A narrow query traversing Role -CONDITIONED_ON-> Process directly will miss most of these, returning only a small subset such as Director and Placement Co-ordinator.",
+    "question": "Which roles have duties that only apply after a specific event or process has occurred? Give examples from the Act.",
+    "reference_answer": "Many duties in the Fixing Long-Term Care Act, 2021 are conditional or 'triggered' — they only come into operation once a specific event has happened or a particular process has begun. These duties belong to several different roles, principally the licensee, the placement co-ordinator, the Director, the Appeal Board, and Residents'/Family Councils. Examples include:\n\n1. LICENSEE — duties triggered by admission of a resident. Under section 6(6), 'When a resident is admitted to a long-term care home, the licensee shall, within the times provided for in the regulations, ensure that the resident is assessed and an initial plan of care developed.' This duty is purely event-driven — it has no application until a resident is actually admitted.\n\n2. LICENSEE — duties triggered by reassessment events. Section 6(10) requires the licensee to ensure the resident is reassessed and the plan of care revised at least every six months, and at any other time when a goal in the plan is met, the resident's care needs change, or the care set out in the plan has not been effective — each a triggering occurrence.\n\n3. LICENSEE — duties triggered by use of restraints/PASD or confinement. Section 39(2) provides that 'If a resident is being restrained by a physical device pursuant to the common law duty...the licensee shall ensure that the device is used in accordance with...the regulations.' Section 36(3) governs duties that arise only where a PASD is used, and section 203(9) imposes duties on the licensee when a resident is initially confined. These apply only after the restraint/confinement actually occurs.\n\n4. LICENSEE — duties triggered by receiving a complaint or a request. Under the complaints provisions, a licensee must immediately forward to the Director any written complaint it receives concerning resident care. Section 65(3) requires the licensee to assist in establishing a Family Council 'within 30 days of receiving a request,' and section 65(4) requires notifying the Director within 30 days when a Family Council is established. Sections 63(3)/66(3) require the licensee to respond in writing within 10 days of receiving concerns or recommendations from the Residents' Council or Family Council.\n\n5. LICENSEE (corporation) — duties triggered by changes. Section 111(1) requires a corporate licensee to notify the Director in writing within 15 days of any change in officers or directors, and 111(2) to notify immediately if the licensee believes a person has gained a controlling interest.\n\n6. ANY PERSON / MANDATORY REPORTERS — duty triggered by suspicion of harm. Section 28(1) requires a person who has reasonable grounds to suspect certain events (improper care, abuse, neglect, unlawful conduct, misuse of money) 'has occurred or may occur' to immediately report to the Director. The reporting duty only arises once the triggering suspicion exists.\n\n7. DIRECTOR — duties triggered by receiving information. Under section 29(1), the Director 'shall have an inspector conduct an inspection or make inquiries...if the Director receives information from any source indicating that any of the [listed events] may have occurred.' The Director's duty is activated by receipt of the information.\n\n8. APPEAL BOARD — duties triggered by receipt of an application/notice. Section 59(1): 'When the Appeal Board receives an application for a review of a determination of ineligibility, it shall promptly appoint a time and place for a hearing,' with the hearing to begin within 21 days. Similarly, section 174(1) requires the Appeal Board, after receiving a notice of appeal, to promptly appoint a hearing, with specific timelines (e.g. 90 days for a licence-revocation appeal).\n\n9. PLACEMENT CO-ORDINATOR — duties triggered by transfer of an application. Section 54 provides that upon a transfer of responsibility for an application, the new placement co-ordinator is deemed to be the placement co-ordinator to whom the application was made and assumes the related duties.\n\nThe common thread is that these are not standing/continuous duties but contingent ones expressed with triggering language such as 'when,' 'if,' 'upon,' 'after receiving,' or 'within X days of receiving' — they only bind the relevant role after the specified event (admission, restraint, a report, a complaint, a request, receipt of an application, etc.) has occurred.",
     "grading_criteria": {
       "excellent": [
-        "Covers at least 4 distinct roles with conditioned obligations",
-        "Uses or describes the Obligation-mediated traversal (Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process)",
-        "Names specific process conditions for at least some roles",
-        "Includes both Placement Co-ordinator and Director"
+        "Correctly identifies that these are conditional/triggered duties expressed with language like 'when', 'if', 'upon', 'after receiving' or 'within X days of receiving'",
+        "Names at least THREE distinct roles with event-triggered duties (e.g. licensee, Director, Appeal Board, placement co-ordinator, mandatory reporters)",
+        "Gives at least three concrete examples with the triggering event clearly stated, such as: licensee's duty to develop an initial plan of care triggered by a resident's admission (s.6(6)); the Director's duty to order an inspection triggered by receiving information (s.29(1)); the Appeal Board's duty to appoint a hearing triggered by receiving an application/notice (s.59(1) or s.174(1))",
+        "Demonstrates the duties are contingent rather than standing/continuous"
       ],
       "good": [
-        "Covers 2–3 roles with conditioned obligations",
-        "Gets the traversal path broadly right",
-        "May miss some roles or specific process names"
+        "Identifies two or more roles with event-triggered duties and gives at least two valid examples with the triggering event named",
+        "Examples are drawn correctly from the Act (e.g. admission triggering plan of care, complaints/requests triggering licensee response, reports triggering Director inspection)",
+        "May omit some roles or cite section numbers approximately/loosely"
       ],
-      "partial": "Returns only 1–2 entries (e.g. only Director and Placement Co-ordinator) due to using a narrow traversal query that skips the Obligation intermediate node.",
-      "weak": "Returns empty results, fails to identify any role-obligation-process links, or describes a completely different query."
+      "partial": "Mentions the general idea that some duties depend on an event occurring but gives only one example, or describes examples vaguely without clearly tying a role to a triggering event.",
+      "weak": "Fails to identify any genuine event-triggered duty, lists only standing/continuous duties as if they were conditional, or fabricates examples not found in the Act."
     },
     "key_facts": [
-      "Correct traversal: Obligation -APPLIES_TO-> Role AND Obligation -CONDITIONED_ON-> Process",
-      "Placement Co-ordinator conditioned on Eligibility Determination",
-      "Director conditioned on Deemed Same Licensee Operation Request",
-      "At least 6 roles with conditioned obligations: Director, Licensee, Minister, Placement Co-ordinator, Rights Adviser, Staff"
+      "Licensee must develop an initial plan of care 'when a resident is admitted' (s.6(6)) — triggered by admission",
+      "Licensee must reassess and revise the plan of care at triggering events: goal met, care needs change, or care not effective (s.6(10))",
+      "Director 'shall have an inspector conduct an inspection or make inquiries' if the Director receives information indicating a listed event may have occurred (s.29(1))",
+      "Mandatory reporting duty under s.28(1) arises only once a person has reasonable grounds to suspect harm has occurred or may occur",
+      "Appeal Board must promptly appoint a hearing 'when' it receives an application for review of ineligibility, beginning within 21 days (s.59(1)); and after receiving a notice of appeal (s.174(1))",
+      "Licensee must assist in establishing a Family Council within 30 days of receiving a request (s.65(3)) and notify the Director within 30 days of establishment (s.65(4))",
+      "Licensee must respond in writing within 10 days of receiving Residents' Council/Family Council concerns (s.63(3)/66(3))",
+      "Corporate licensee must notify the Director within 15 days of a change in officers/directors (s.111(1))",
+      "Duties tied to restraint/PASD/confinement apply only after the restraint or confinement occurs (s.39(2), s.36(3), s.203(9))",
+      "These are conditional duties signalled by 'when', 'if', 'upon', 'after receiving', 'within X days of receiving'"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:26:51.079524+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 40.28,
+    "usage": {
+      "inputTokens": 29649,
+      "cacheWriteInputTokens": 7796,
+      "cacheReadInputTokens": 10348,
+      "outputTokens": 3114
+    },
+    "cost": 0.8399820000000001
   },
   {
     "index": 4,
     "question": "What are all the rights that residents hold under this Act?",
-    "reference_answer": "Residents hold at least 55 distinct rights under the Act and O. Reg. 246/22. Categories include: care rights (care plan participation, treatment consent, communication access), dignity rights (privacy, name choice, cultural and religious practice), accommodation rights (choose class of accommodation, request AC installation or removal), financial rights (apply for basic accommodation charge reduction), complaint and legal rights (raise concerns without reprisal), discharge rights (receive notice, refuse transfer into bed to be closed), and health-specific rights. Rights added by the regulation include: Right to Use Recreational Cannabis, Right to Use Unprescribed Natural Health Products, Right to Receive Notice of Discharge, Right to Refuse Transfer into Bed to be Closed, Right to Choose Class of Accommodation, Right to Apply for Reduction in Basic Accommodation Charge, Right to Request Non-Installation/Uninstallation of AC Unit, and Right to Terminate Non-Accommodation Agreement.",
+    "reference_answer": "Residents' rights are set out in the 'Residents' Bill of Rights' in section 3 of the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1). Every licensee of a long-term care home must ensure these rights are 'fully respected and promoted.' There are 29 enumerated rights, organized under six thematic headings:\n\nRIGHT TO BE TREATED WITH RESPECT (paragraphs 1–3): (1) the right to be treated with courtesy and respect in a way that fully recognizes the resident's inherent dignity, worth and individuality, regardless of race, ancestry, place of origin, colour, ethnic origin, citizenship, creed, sex, sexual orientation, gender identity, gender expression, age, marital status, family status or disability; (2) the right to have their lifestyle and choices respected; (3) the right to have their participation in decision-making respected.\n\nRIGHT TO FREEDOM FROM ABUSE AND NEGLECT (paragraphs 4–5): (4) the right to freedom from abuse; (5) the right to freedom from neglect by the licensee and staff.\n\nRIGHT TO AN OPTIMAL QUALITY OF LIFE (paragraphs 6–15): (6) the right to communicate in confidence, receive visitors of their choice and consult in private with any person without interference; (7) the right to form friendships and relationships and participate in the life of the home; (8) the right to share a room with another resident according to mutual wishes if appropriate accommodation is available; (9) the right to meet privately with a spouse or another person in a room that assures privacy; (10) the right to pursue social, cultural, religious, spiritual and other interests, to develop their potential and to be given reasonable assistance to do so; (11) the right to live in a safe and clean environment; (12) the right to access protected outdoor areas to enjoy outdoor activity unless the physical setting makes this impossible; (13) the right to keep and display personal possessions, pictures and furnishings in their room (subject to safety and the rights of others); (14) the right to manage their own financial affairs unless they lack legal capacity; (15) the right to exercise the rights of a citizen.\n\nRIGHT TO QUALITY CARE AND SELF-DETERMINATION (paragraphs 16–26): (16) the right to proper accommodation, nutrition, care and services consistent with their needs; (17) the right to be told who is responsible for and who is providing their direct care; (18) the right to privacy in treatment and in caring for personal needs; (19) the right to participate fully in developing, implementing, reviewing and revising their plan of care, to give or refuse consent to treatment/care/services and be informed of the consequences, and to participate fully in decisions about their care; (20) the right to ongoing and safe support from caregivers and assistance in contacting a caregiver or other person; (21) the right to have any friend, family member, caregiver or other person of importance attend any meeting with the licensee or staff; (22) the right to designate a person to receive information about any transfer or hospitalization and to have that person receive it immediately; (23) the right to have their personal health information kept confidential under the Personal Health Information Protection Act, 2004 and to access their own records, including their plan of care; (24) the right not to be restrained except in limited circumstances provided for under the Act (amended on proclamation to add 'or confined'); (25) the right to care and services based on a palliative care philosophy; (26) for a resident who is dying or very ill, the right to have family and friends present 24 hours per day.\n\nRIGHT TO BE INFORMED, PARTICIPATE, AND MAKE A COMPLAINT (paragraphs 27–29): (27) the right to be informed in writing of any law, rule or policy affecting services and of the procedures for initiating complaints; (28) the right to participate in the Residents' Council; (29) the right to raise concerns or recommend changes in policies and services on behalf of themselves or others—without interference and without fear of coercion, discrimination or reprisal—to specified persons and organizations (including the Residents' Council, the licensee and staff, government, the Director and others listed in the Act).\n\nThese rights are legally enforceable. Under subsection 3(2), the Act, the regulations, and agreements between licensees and the Crown or residents must be interpreted to advance respect for these rights. Under subsection 3(3), a resident may enforce the Bill of Rights against the licensee as though they had entered into a contract under which the licensee agreed to fully respect and promote all of the rights. Subsection 3(4) authorizes regulations governing how the rights are to be respected and promoted.",
     "grading_criteria": {
       "excellent": [
-        "Returns at least 40 distinct rights",
-        "Covers rights from both the Act's Bill of Rights and the regulation",
-        "Includes at least several of the regulatory additions (cannabis, natural health products, AC, discharge, accommodation choice)",
-        "Organizes or categorizes rights meaningfully rather than listing names only"
+        "Must identify the rights as the 'Residents' Bill of Rights' set out in section 3 of the Fixing Long-Term Care Act, 2021",
+        "Must state that there are 29 enumerated rights (or list essentially all of them)",
+        "Must organize or reflect the six headings: Right to be Treated with Respect; Freedom from Abuse and Neglect; Optimal Quality of Life; Quality Care and Self-Determination; and Right to be Informed, Participate, and Make a Complaint",
+        "Must cover the substance across all categories, including: dignity/respect regardless of protected grounds; freedom from abuse and neglect; privacy and confidentiality of health information; consent to or refusal of treatment and participation in the plan of care; not being restrained except in limited circumstances; palliative care philosophy; participation in the Residents' Council; and raising concerns/complaints without reprisal",
+        "Must note that the rights are enforceable—specifically that a resident may enforce the Bill of Rights against the licensee as though it were a contract (subsection 3(3))",
+        "Must note the licensee's duty to ensure these rights are fully respected and promoted"
       ],
       "good": [
-        "Returns 20–39 distinct rights",
-        "Covers the main Bill of Rights provisions accurately",
-        "May miss most regulatory additions",
-        "Accurate for what it covers"
+        "Correctly identifies the Residents' Bill of Rights in section 3 and that licensees must respect and promote them",
+        "Lists or summarizes the large majority of the rights across all or most of the six categories",
+        "Captures the key substantive rights (respect/dignity, freedom from abuse/neglect, quality of life, consent and plan of care, restraint limits, complaints/Residents' Council)",
+        "May omit a few individual paragraphs or the exact count of 29, and may give only brief mention of the enforcement/contract provision"
       ],
-      "partial": "Returns fewer than 20 rights or only lists right names without any context or categorization.",
-      "weak": "Returns very few rights, confuses rights with obligations, or asserts non-existent rights."
+      "partial": "Identifies that residents have a Bill of Rights and lists a handful of rights (e.g., respect, freedom from abuse, complaints) but misses several categories, omits the enforceability/contract provision, and does not approach a complete enumeration.",
+      "weak": "Gives only vague or generic statements about resident protections, fabricates rights not in the Act, fails to reference the Residents' Bill of Rights/section 3, or covers only one or two rights."
     },
     "key_facts": [
-      "At least 55 distinct rights in the full Act + Regulation graph",
-      "Right to Use Recreational Cannabis (from regulation)",
-      "Right to Use Unprescribed Natural Health Products (from regulation)",
-      "Right to Refuse Transfer into Bed to be Closed (from regulation)",
-      "Right to Terminate Non-Accommodation Agreement (from regulation)"
+      "The rights are contained in the 'Residents' Bill of Rights' in section 3 of the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1)",
+      "There are 29 enumerated rights",
+      "Right to be treated with courtesy and respect recognizing inherent dignity, worth and individuality regardless of protected grounds (race, sex, sexual orientation, gender identity, age, disability, etc.)",
+      "Right to freedom from abuse and right to freedom from neglect by the licensee and staff",
+      "Right to communicate in confidence, receive visitors of choice, and meet privately with a spouse",
+      "Right to have personal health information kept confidential under PHIPA and to access one's own records including the plan of care",
+      "Right to participate in the plan of care and to give or refuse consent to treatment/care/services",
+      "Right not to be restrained except in limited circumstances under the Act (amendment adds 'or confined' on proclamation)",
+      "Right to care based on a palliative care philosophy and, for the dying/very ill, family and friends present 24 hours a day",
+      "Right to be informed in writing of complaint procedures, to participate in the Residents' Council, and to raise concerns without coercion, discrimination or reprisal",
+      "Licensees must ensure the rights are 'fully respected and promoted'",
+      "Under subsection 3(3) a resident may enforce the Bill of Rights against the licensee as though they had entered into a contract"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:27:41.769603+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 50.69,
+    "usage": {
+      "inputTokens": 40422,
+      "cacheWriteInputTokens": 12812,
+      "cacheReadInputTokens": 17555,
+      "outputTokens": 3897
+    },
+    "cost": 1.1651625
   },
   {
     "index": 5,
     "question": "What are all the grounds under which a licence can be suspended or revoked?",
-    "reference_answer": "Grounds for licence suspension or revocation are found in two provisions. Under s.159(2), the Director may act on grounds (a)–(f): (a) failure to comply with the Act or regulations; (b) conduct contrary to the public interest; (c) providing false or misleading information; (d) ceasing to operate; (e) substantial change in circumstances; (f) any ground prescribed by regulation. Under s.161, the Minister has a broader discretionary power. O. Reg. 246/22 added a transitional ground under s.352, allowing the Director to act on grounds that arose under the former Long-Term Care Homes Act, 2007.",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1), there are two routes by which a long-term care home licence can be suspended or revoked: an order by the Director under section 159, and a suspension by the Minister under section 161.\n\nSection 159 — Director's suspension or revocation. Under section 159(1), the Director may make an order suspending or revoking a licence. Section 159(2) sets out the grounds; a licence may be suspended or revoked if:\n(a) the licensee has not complied with a requirement under this Act;\n(b) any person has made a false statement in the application for the licence, or the licensee (or any person acting on the licensee's behalf) has made a false statement in any report, document or other information required to be furnished under this Act or any other legislation in relation to the long-term care home;\n(c) the conduct of the licensee, a person with a controlling interest in the licensee, or (where the licensee is a corporation) its officers and directors, affords reasonable grounds to believe that the home will not be operated in accordance with the law and with honesty and integrity, or will be operated in a manner prejudicial to the health, safety or welfare of its residents;\n(d) the licensee is no longer eligible to be issued/hold the licence (i.e., no longer meets the eligibility requirements such as those in section 101);\n(e) a person has taken over the operation of the long-term care home by exercising a security interest in accordance with section 110, and the conditions provided for in the regulations apply; or\n(f) a person has gained a controlling interest in the licensee without the approval of the Director, contrary to section 112, or a condition of such an approval has been breached.\n\nProcedural features of section 159: an order suspending a licence takes effect immediately upon the licensee being served with a copy of the order (s.159(3)), without impeding the right of appeal to the Appeal Board. Having suspended or revoked a licence, the Director may also order the home to be occupied and operated by a long-term care home supervisor (s.159(5)). A suspension does not preclude the Director from later revoking the same licence if satisfied the licensee cannot or will not properly operate the home (s.159(6)).\n\nSection 161 — Minister's suspension. Separately, under section 161(1), if the Minister has reasonable grounds to believe that a long-term care home is being operated, or will be operated, in a manner that is prejudicial to the health, safety or welfare of its residents, the Minister may make an order suspending the licence for the home. Where the Minister makes such an order, sections 159 to 177 apply with necessary modifications, and the Lieutenant Governor in Council may appoint a supervisor on the Minister's recommendation.\n\nThere is no automatic stay of a suspension or revocation order on appeal: under section 172(2), the no-automatic-stay rule applies to orders to suspend or revoke a licence under section 159(1) and to suspend under section 161(1).",
     "grading_criteria": {
       "excellent": [
-        "Cites s.159(2) and enumerates at least 4 of the 6 lettered grounds (a)–(f)",
-        "Notes the s.161 Minister discretionary power separately from the Director's s.159 power",
-        "Includes the transitional ground from s.352 of O. Reg. 246/22"
+        "Must identify that the Director's power to suspend or revoke is in section 159 and list essentially all six grounds in s.159(2): (a) non-compliance with a requirement under the Act; (b) false statement in the licence application or in any report/document/information required under the Act or other legislation; (c) conduct of the licensee/controlling-interest person/officers and directors affording reasonable grounds to believe the home will not be operated lawfully and with honesty/integrity, or will be operated prejudicially to residents' health, safety or welfare; (d) the licensee is no longer eligible to hold the licence; (e) a person taking over operation by exercising a security interest under section 110 (with regulatory conditions); (f) a person gaining a controlling interest without the Director's approval contrary to section 112, or breach of a condition of such approval",
+        "Must also identify the Minister's separate suspension power under section 161 — where the Minister has reasonable grounds to believe the home is or will be operated in a manner prejudicial to residents' health, safety or welfare",
+        "Should attribute the powers to the Director (s.159) versus the Minister (s.161) correctly"
       ],
       "good": [
-        "Covers the main s.159(2) grounds",
-        "Identifies both Director and Minister as actors with distinct powers",
-        "May omit the transitional ground or specific section references"
+        "Correctly identifies section 159 as the core provision and lists most of the grounds (at least four of the six), including non-compliance, false statements, and the conduct/eligibility/controlling-interest grounds",
+        "Mentions the Minister's suspension power for operation prejudicial to residents (s.161), even if section number is imprecise",
+        "May miss or merge minor grounds (e.g. the security-interest takeover ground or the controlling-interest ground) or omit procedural details like immediate effect or supervisor appointment"
       ],
-      "partial": "Lists some grounds but misses the Director/Minister power distinction or omits most section references.",
-      "weak": "Provides only vague generalities without grounding in the specific statutory provisions."
+      "partial": "Identifies that a licence can be suspended or revoked for non-compliance and for operating prejudicially to residents but lists only one or two grounds, omits the Minister's separate power, and gives no section references or specifics.",
+      "weak": "Vague statement that licences can be revoked for bad behaviour or rule-breaking with no specific grounds, no distinction between Director and Minister, or fabricated grounds not in the Act."
     },
     "key_facts": [
-      "s.159(2)(a)–(f) Director grounds",
-      "s.161 Minister discretionary power",
-      "s.352 O. Reg. 246/22 transitional ground",
-      "Transitional ground covers conduct under the former Long-Term Care Homes Act, 2007"
+      "Section 159(1): the Director may make an order suspending or revoking a licence",
+      "Ground (a): licensee has not complied with a requirement under this Act",
+      "Ground (b): a false statement was made in the licence application, or by the licensee/agent in any required report, document or other information under this or other legislation",
+      "Ground (c): conduct of the licensee, controlling-interest holder, or officers/directors affords reasonable grounds to believe the home will not be operated lawfully/with honesty and integrity or will be operated prejudicially to residents' health, safety or welfare",
+      "Ground (d): the licensee is no longer eligible to hold the licence",
+      "Ground (e): a person has taken over operation by exercising a security interest under section 110 (with conditions in the regulations)",
+      "Ground (f): a person gained a controlling interest in the licensee without the Director's approval contrary to section 112, or a condition of such approval was breached",
+      "Section 161(1): the Minister may suspend a licence if there are reasonable grounds to believe the home is or will be operated in a manner prejudicial to residents' health, safety or welfare",
+      "A suspension order takes effect immediately on service (s.159(3)); the Director may appoint a long-term care home supervisor (s.159(5)); and there is no automatic stay on appeal for s.159(1) or s.161(1) orders (s.172(2))"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:28:30.449182+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 48.68,
+    "usage": {
+      "inputTokens": 51052,
+      "cacheWriteInputTokens": 21993,
+      "cacheReadInputTokens": 33746,
+      "outputTokens": 3368
+    },
+    "cost": 1.48136775
   },
   {
     "index": 6,
     "question": "List every type of document a Licensee is required to maintain.",
-    "reference_answer": "A Licensee must maintain over 60 categories of documents. Key categories and examples include: care documents (written care plans, individualized continence plans, individualized menus); policy documents (written visitor policy, written policy on secure outside area doors, written policies for monitoring maintenance/repair service providers, written emergency drug supply policy, drug policies covering self-administration/natural health products/cannabis/medical cannabis/medication management/destruction and disposal, medication management policies and protocols, trust account written policy); personnel records (police record check results; staff, volunteer, and board records with 7-year retention); financial records (audited reconciliation reports, non-arm's-length procurement records, annual financial statements); safety records (temperature records with 1-year retention, air conditioning records, visitor logs with 30-day minimum retention); quality records (CQI reports); food records (food production records with 1-year retention, non-resident food records with 7-year retention); and resident records (10-year retention after discharge). Specific retention periods: 7 years for financial/staff/volunteer/trust records; 10 years for resident records; 30 days for visitor logs; 1 year for food production and temperature records.",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and its General Regulation (O. Reg. 246/22), a licensee of a long-term care home is required to maintain a wide range of documents, records, plans, policies and reports. The principal categories are:\n\nRESIDENT-SPECIFIC RECORDS\n- A written plan of care for each resident (s. 6 of the Act), including documentation of the provision, outcomes and effectiveness of the care set out in the plan.\n- A written record/clinical record for each resident, created, maintained and kept up to date at all times (Reg. s. 274), kept at the home for current residents (s. 275) and retained for at least 10 years after discharge (at least the first year at the home) for former residents (s. 276).\n- Records of personal health information (kept confidential under the Personal Health Information Protection Act, 2004).\n- Records on the restraining of a resident and the use of a PASD (s. 37 of the Act).\n- Medication assessments, medication administration records, records for medication reassessment and medication profiles for each resident (Reg. s. 129).\n- Records of medication incidents and adverse drug reactions.\n\nSTAFF, VOLUNTEER AND BOARD RECORDS\n- Records of each staff member, volunteer, student and member of the board/committee of management (Reg. s. 281), including screening/police record check results and regular declarations, retained (e.g. at least seven years after a staff member ceases to work, with the first year at the home) (Reg. s. 282).\n- Records of persons subject to the personal support worker transitional provisions (Reg. s. 52(6)).\n\nFINANCIAL AND ADMINISTRATIVE RECORDS\n- Accounts and records for each home, kept separate from any other home or business of the licensee (s. 95 of the Act).\n- Financial statements relating to the home filed with the Director/Agency.\n- Trust account records for residents' money (Reg. s. 286; Act regulation-making power re trust accounts).\n- A detailed allocation of funding.\n\nPOLICIES, PLANS AND PROGRAMS (and their written evaluation records)\n- Mission statement (s. 4).\n- Written policy to promote zero tolerance of abuse and neglect (s. 25).\n- Written procedures for complaints (s. 26) and records of complaints and their investigation/resolution (Reg. ss. 107-108).\n- Written policy to minimize the restraining/confining of residents (s. 33).\n- Written staffing plan for nursing and personal support services (Reg. s. 35), with a written record of each annual evaluation.\n- Training and orientation program records and written evaluation records (Reg. s. 257).\n- Infection prevention and control program and outbreak plans.\n- Emergency plans, plus an attestation of compliance and a record of every attestation (s. 86 of the Act).\n- Medication management system policies and protocols, with quarterly and annual evaluation records (Reg. ss. 123-125).\n- Continuous quality improvement initiative, including an annual CQI report published for each fiscal year (Reg. s. 168).\n- Resident and Family/Caregiver Experience Survey records (s. 43).\n- Written records of the development, evaluation and updating of the various required programs (e.g. nursing/personal support, falls prevention, skin and wound care, continence care, pain management, responsive behaviours, nutritional care), including the date of evaluation, names of participants, summary of changes and dates of implementation.\n\nFOOD / DIETARY RECORDS\n- The approved menu cycle and menu substitutions, and records of purchases (including food delivery receipts) relating to the food production system, kept for at least one year (Reg. s. 78); records of meals prepared for non-residents kept for at least seven years.\n\nGENERAL\n- Records relating to required plans, policies, protocols, programs, procedures, strategies, initiatives and systems (Reg. s. 11 – the 'Policies and Records' provision), and any other records the regulations require.\n- Records and reports relating to critical incidents reported to the Director (s. 115 of the Reg.), police notifications, and inspection reports/orders that must be retained and posted.\n\nIn short, the licensee must maintain: resident clinical/care records (plans of care, health records, restraint/PASD records, medication records); staff, volunteer, student and board member records (including screening); financial accounts, records and trust account records; required written policies (zero tolerance of abuse, restraining/confining, complaints procedures); required programs and staffing plans together with their written evaluation records; emergency plans and attestations; infection control/outbreak plans; medication management system documentation and evaluations; continuous quality improvement reports and experience survey records; and dietary/food production records (menu cycles, substitutions, purchase records).",
     "grading_criteria": {
       "excellent": [
-        "Covers at least 8 distinct document categories",
-        "Includes at least two specific retention periods (7 years, 10 years, 30 days, or 1 year)",
-        "Includes at least several regulation-sourced document types (drug policies, AC records, visitor logs, CQI reports)",
-        "Includes trust account written policy and police record check results"
+        "Must identify resident clinical/care records: the written plan of care (Act s. 6) AND the resident's written record kept up to date and retained (Reg. ss. 274-276, e.g. 10-year retention after discharge)",
+        "Must identify records on restraining of residents and use of a PASD (Act s. 37)",
+        "Must identify staff/volunteer/student/board member records including screening/police record checks and their retention (Reg. ss. 281-282)",
+        "Must identify financial records: separate accounts and records per home (Act s. 95) and/or financial statements and trust account records for residents",
+        "Must identify required written policies: zero tolerance of abuse and neglect (s. 25), complaints procedures and complaint records (s. 26), and policy to minimize restraining/confining (s. 33)",
+        "Must identify required programs/plans with written evaluation records, including the written staffing plan (Reg. s. 35) and emergency plans with the attestation/record of every attestation (Act s. 86)",
+        "Must identify at least several of: medication management/medication records, infection control/outbreak plans, continuous quality improvement report, experience survey, and dietary/menu/food production records",
+        "Should draw from both the Act and O. Reg. 246/22 and present the items as an organized list of distinct document types"
       ],
       "good": [
-        "Covers 4–7 distinct categories",
-        "Accurate for what it covers",
-        "May omit retention periods or most of the regulation-sourced document types"
+        "Covers resident records (plan of care and clinical/health records), staff/volunteer records, financial accounts, the main written policies (zero tolerance, complaints, restraining), and emergency plans",
+        "May miss some secondary record types (e.g. menu/food production records, medication profiles, experience survey, CQI report) or precise retention periods",
+        "Approximate citations or paraphrased section references acceptable"
       ],
-      "partial": "Lists fewer than 4 categories or gives only generic descriptions without naming specific document types.",
-      "weak": "Very few documents mentioned, major categories absent, or incorrect information about what must be maintained."
+      "partial": "Lists only a few obvious record types (e.g. resident care records and staff records) and omits most policies, plans, financial records, and program evaluation records, or is vague about what must be maintained.",
+      "weak": "Fails to identify the core record categories, conflates inspector powers with licensee duties, or fabricates document types not found in the Act/Regulation."
     },
     "key_facts": [
-      "7-year retention for financial, staff, volunteer, and trust records",
-      "10-year retention for resident records after discharge",
-      "30-day minimum retention for visitor logs",
-      "1-year retention for food production and temperature records",
-      "Over 60 document categories in the complete answer"
+      "Written plan of care for each resident (Act s. 6), with documentation of provision, outcomes and effectiveness",
+      "A written record for each resident kept up to date (Reg. s. 274); records of current residents kept at the home (s. 275); former residents' records retained at least 10 years after discharge, first year at the home (s. 276)",
+      "Records on restraining of residents and use of a PASD (Act s. 37)",
+      "Records of staff, volunteers, students and board/committee members, including screening/police record checks, with retention (e.g. at least 7 years after a staff member leaves) (Reg. ss. 281-282)",
+      "Separate accounts and records for each home (Act s. 95); financial statements filed with the Director/Agency; trust account records for residents' money",
+      "Written policy to promote zero tolerance of abuse and neglect (Act s. 25)",
+      "Written complaints procedures and records of complaints, investigation and resolution (Act s. 26; Reg. ss. 107-108)",
+      "Written policy to minimize restraining/confining of residents (Act s. 33)",
+      "Written staffing plan for nursing and personal support services with annual evaluation records (Reg. s. 35)",
+      "Emergency plans plus an attestation of compliance and a record of every attestation (Act s. 86)",
+      "Medication management system policies/protocols and medication records (assessments, administration records, profiles), with quarterly and annual evaluations (Reg. ss. 123-129)",
+      "Continuous quality improvement initiative report for each fiscal year (Reg. s. 168) and Resident and Family/Caregiver Experience Survey records (Act s. 43)",
+      "Dietary records: approved menu cycle, menu substitutions and food production/purchase records kept at least one year; non-resident meal records kept at least 7 years (Reg. s. 78)",
+      "Written records of the evaluation/updating of required programs, including date, participants, summary of changes and implementation date"
     ],
-    "generated_at": "2026-06-08T00:00:00+00:00",
-    "research_model": "human",
-    "source_path": "fltca_2021 + O. Reg. 246/22",
-    "duration_s": 0,
-    "usage": {},
-    "cost": 0
+    "generated_at": "2026-06-10T20:29:32.818208+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 62.37,
+    "usage": {
+      "inputTokens": 97435,
+      "cacheWriteInputTokens": 35519,
+      "cacheReadInputTokens": 58130,
+      "outputTokens": 4657
+    },
+    "cost": 2.56397625
   },
   {
     "index": 7,
@@ -247,5 +318,356 @@
       "outputTokens": 4869
     },
     "cost": 2.1515137499999994
+  },
+  {
+    "index": 8,
+    "question": "Who has supervisory or oversight powers over long-term care homes, and what is the source of each power?",
+    "reference_answer": "Supervisory and oversight powers over long-term care homes under Ontario's Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) are distributed among several actors, each drawing authority from specific provisions of the Act:\n\n1. The Minister (of Long-Term Care). The Minister presides over the Ministry that administers the Act and holds high-level oversight powers. Under section 184 the Minister may issue operational or policy directives, which are binding 'requirements under this Act.' Under section 144 the Minister appoints inspectors (and issues their certificates of appointment). The Minister sets, assesses and publicly reports on care targets (sections 8-10), funds homes and may attach conditions to funding (section 93), designates and may revoke placement co-ordinators (section 47-48), may establish the Office of the Long-Term Care Homes Resident and Family Adviser (section 40) and a Long-Term Care Quality Centre (section 44), and is entitled to be heard in Appeal Board and Divisional Court proceedings.\n\n2. The Director. The Director is the person appointed under section 185 (and is, by virtue of office, also an inspector under section 144(2)). The Director is the central operational supervisor: licensees must forward complaints (section 26) and report investigation results, critical incidents and other matters to the Director (sections 25, 27, 28). Under section 29 the Director must have an inspector conduct an inspection or make inquiries upon receiving information indicating harm or risk of harm to residents, and the Director may make its own inquiries. The Director makes and oversees enforcement orders — e.g., ordering a licensee to prepare a written plan for achieving compliance (clause 155(1)(b)) following a referral under section 154 — and the Director's licensing powers flow from Part VIII (licences) and Part IX (approvals).\n\n3. Inspectors. The Minister appoints inspectors under section 144 (the Director is automatically an inspector). Inspectors carry out inspections (Part X) for the purpose of ensuring compliance, may exercise inspection powers under section 150, may obtain a warrant under section 151, and may make orders against licensees (section 154 onward). The conduct of inspections is triggered by the Director under section 29.\n\n4. The Appeal Board (Health Services Appeal and Review Board, under the Ministry of Health and Long-Term Care Appeal and Review Boards Act, 1998 — defined in section 2). It reviews determinations such as eligibility/ineligibility for admission (sections 59-60) and has power to affirm, rescind or substitute decisions.\n\n5. The Divisional Court. Hears appeals from Appeal Board decisions on questions of law or fact (section 60), and otherwise exercises judicial oversight.\n\n6. The Patient Ombudsman. Under the Excellent Care for All Act, 2010, residents/families may complain to the Patient Ombudsman; the Act requires licensees' complaint procedures to inform residents of this avenue (section 26).\n\n7. Residents' Councils and Family Councils. These bodies have a statutory oversight role within the home: they may report concerns and recommendations to the Director, and review inspection reports and summaries (section 152), the licensee's written compliance plan, the home's funding allocations and financial statements, and the operation of the home.\n\n8. The Lieutenant Governor in Council. Makes regulations under the Act (e.g., section 41 and throughout), which are themselves 'requirements under this Act,' and may divide territorial districts for placement purposes.\n\nIn short: the Minister sets policy/directives, appoints inspectors and funds homes; the Director administers compliance, receives reports, directs inspections and makes/oversees enforcement orders and licensing; inspectors carry out inspections and issue orders; the Appeal Board and Divisional Court provide review/appeal; the Patient Ombudsman provides an external complaint channel; Residents'/Family Councils provide internal oversight; and the Lieutenant Governor in Council makes regulations.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies that the governing source is the Fixing Long-Term Care Act, 2021 (Ontario)",
+        "Names at least the Minister, the Director, and inspectors as holders of oversight powers, AND ties each to a source: Minister issues operational/policy directives (s. 184) and appoints inspectors (s. 144); Director appointed under s. 185 (and is an inspector by office); inspectors appointed by the Minister under s. 144 with inspection/order powers under Part X (e.g., ss. 150-151, 154-155)",
+        "Mentions the Director's role in receiving complaints/reports and triggering inspections (e.g., s. 29) and/or compliance orders (s. 154/155)",
+        "Identifies at least one review/appeal body — the Appeal Board (Health Services Appeal and Review Board) and/or the Divisional Court (s. 59-60) — with its source",
+        "Includes at least one additional oversight actor with source, e.g., Patient Ombudsman under the Excellent Care for All Act, 2010 (s. 26), Residents'/Family Councils reviewing inspection reports (s. 152), or the Lieutenant Governor in Council making regulations"
+      ],
+      "good": [
+        "Correctly identifies the Minister, Director, and inspectors as the main oversight actors with broadly correct descriptions of their powers",
+        "Connects most powers to a statutory basis even if not every section number is exact (approximate section references acceptable)",
+        "May omit one of the secondary actors (Patient Ombudsman, Councils, Lieutenant Governor in Council, or the courts) or give less precise sourcing"
+      ],
+      "partial": "Names only one or two oversight actors (e.g., just the Director or just inspectors) or describes oversight powers generally without tying them to specific provisions or sources within the Act.",
+      "weak": "Fails to identify the correct actors, attributes powers to the wrong body, cites a different statute incorrectly, or fabricates roles/sections not supported by the Act."
+    },
+    "key_facts": [
+      "The governing statute is the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1)",
+      "The Minister appoints inspectors under section 144 and may issue operational or policy directives under section 184 (which count as 'requirements under this Act')",
+      "The Director is the person appointed under section 185 and is, by virtue of office, also an inspector (s. 144(2))",
+      "Under section 29 the Director must have an inspector conduct an inspection or make inquiries when information indicates harm or risk of harm to residents",
+      "Inspectors exercise inspection powers under section 150 and may obtain a warrant under section 151; enforcement orders flow from Part X (e.g., sections 154-155, including the Director ordering a written plan for achieving compliance under clause 155(1)(b))",
+      "The Appeal Board (Health Services Appeal and Review Board under the Ministry of Health and Long-Term Care Appeal and Review Boards Act, 1998) reviews determinations (ss. 59-60), with appeals to the Divisional Court (s. 60)",
+      "The Patient Ombudsman under the Excellent Care for All Act, 2010 is an external complaint channel referenced in section 26",
+      "Residents' Councils and Family Councils review inspection reports/summaries (s. 152) and report concerns to the Director",
+      "The Lieutenant Governor in Council makes regulations under the Act (e.g., s. 41)"
+    ],
+    "generated_at": "2026-06-10T20:30:32.626208+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 59.81,
+    "usage": {
+      "inputTokens": 84594,
+      "cacheWriteInputTokens": 31598,
+      "cacheReadInputTokens": 64989,
+      "outputTokens": 4275
+    },
+    "cost": 2.279481
+  },
+  {
+    "index": 9,
+    "question": "Show me the full normative structure for the Licensee — what obligations, prohibitions, and rights apply to them?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (Ontario, S.O. 2021, c. 39, Sched. 1) and its regulations (notably O. Reg. 246/22), the 'licensee' is the holder of a licence issued under the Act, and includes a municipality, municipalities, or board of management that maintains a municipal home, joint home, or First Nations home approved under Part IX (s. 2 definition). The licensee is the central duty-bearer of the statute, and its normative structure has three layers: OBLIGATIONS (overwhelmingly framed as 'Every licensee ... shall ensure'), PROHIBITIONS ('A licensee shall not' / 'No licensee/person shall'), and RIGHTS/PERMISSIONS ('a licensee may').\n\nOBLIGATIONS (duties — the dominant category):\n- Respect and promote residents' rights: ensure that the rights in the Residents' Bill of Rights (s. 3, e.g. right to be treated with respect, freedom from abuse and neglect, optimal quality of life, etc.) are fully respected and promoted.\n- Mission statement (s. 4): ensure there is a mission statement for each home driven by the goal of resident-directed, safe quality care.\n- Plan of care (s. 6): ensure a written plan of care for each resident; that it is based on assessment of the resident; covers all aspects of care (medical, nursing, personal support, mental health, nutritional, dietary, recreational, social, palliative, restorative, religious, etc.); that staff collaborate and the plan is integrated; that the resident/SDM can participate; that an initial plan is developed on admission; comply with the plan (duty to comply, s. 6(7)); keep staff aware; document; review/revise and explain the plan.\n- Care and service programs: ensure organized interdisciplinary programs and standards for palliative care (s. 12), restorative care (s. 13), nutrition/dietary services and hydration (s. 15), medical services (s. 16), and the other programs in ss. 11–20; meet staffing and care standards in the regulations (s. 21); ensure programs/services comply with standards, requirements and outcome measures (s. 22).\n- Protection / minimizing restraint: maintain and comply with a written policy to minimize (and, once amendments are in force, to minimize the restraining and confining of) residents (s. 33); ensure no resident is improperly restrained/confined and that any restraint is done lawfully per the plan of care (ss. 34, 35).\n- Councils: assist in establishing a Family Council within 30 days of a request and notify the Director (s. 65); where there is no Family Council, advise families of the right to establish one and convene semi-annual meetings; duty to consult regularly with the Residents' Council and Family Council (s. 73); not hinder council assistants and ensure no staff member does what the licensee is forbidden to do (s. 71).\n- Financial/administrative: keep separate accounts and records for each home (s. 95); provide itemized statements to residents (s. 94(5)); submit reports to the Director on non-arm's-length transactions (s. 96(3)); comply with funding conditions.\n- Reporting/record-keeping under the regulations (e.g. record-keeping on air-conditioning decisions in O. Reg. 246/22 / O. Reg. 178/24; laundry, maintenance, therapy and social work programs, etc.).\n\nPROHIBITIONS:\n- Charging: a licensee SHALL NOT charge a resident for anything except as permitted (basic/preferred accommodation limits) (s. 94(1)); shall not accept payment, or cause/permit anyone to charge or accept payment, for things it is prohibited from charging for (s. 94(4)).\n- Non-arm's-length transactions: shall not enter into a non-arm's-length transaction prohibited by the regulations, and shall not enter one requiring the Director's consent without that consent (s. 96).\n- Licence: shall not surrender the licence before the end of its term except with the Director's consent or as provided (s. 106(4)); shall not operate more beds than allowed under the licence/temporary licence (s. 107); shall not allow a Director-approved management contract to be materially amended without approval (s. 113(6)); may not surrender its licence while under a supervisor without the Director's approval (s. 161 supervision provisions).\n- Restraint/confinement: shall ensure no resident is restrained/confined for convenience or as discipline, etc. (s. 34).\n- Reprisal/whistle-blowing (s. 30): no person (including the licensee) shall retaliate against another person for disclosures to an inspector or the Director — retaliation includes dismissing, disciplining or suspending a staff member, imposing a penalty, or intimidating, coercing or harassing; a resident shall not be discharged, threatened with discharge or subjected to discriminatory treatment for such disclosures.\n- Shall not hinder, obstruct or interfere with Residents'/Family Council assistants (s. 71); obstruction of inspectors/Director is an offence (s. 32).\n\nRIGHTS / PERMISSIONS:\n- May withdraw approval of an applicant's admission only in the circumstances set out in the Act (e.g. clauses 44(7)(a)–(c)) and per the regulations.\n- May provide residential (rather than industrial) washers and dryers in defined circumstances (O. Reg. 246/22, s. 95).\n- May arrange a different bed or room where a resident's needs change (regulation).\n- May hire certain people (e.g. RNs/RPNs) as personal support workers where conditions are met; therapy/restorative services may be provided/arranged by the licensee through qualified support personnel.\n- May apply for, hold and (with consent) surrender a licence; receives funding (subject to conditions and set-off).\n- Right to procedural fairness/appeal: a licensee may request a review of, and appeal to the Appeal Board (s. 170), an order made by the Director under ss. 155–159 (and, subject to regulations, a Minister's order under s. 161), a notice of administrative penalty under s. 158, and a decision of the Director under s. 169.\n\nOverall, the licensee's normative structure is dominated by affirmative 'shall ensure' obligations centred on resident care, rights and safety, a set of clear prohibitions (especially around charging, bed numbers, the licence itself, reprisals and improper restraint), and a comparatively small set of permissions and procedural rights (notably the right to appeal Director/Minister enforcement actions to the Appeal Board).",
+    "grading_criteria": {
+      "excellent": [
+        "Must correctly identify the source as the Fixing Long-Term Care Act, 2021 (Ontario) and/or its regulations, and define the licensee as the holder of a licence (including municipal/joint/First Nations home boards of management)",
+        "Must organise the answer into the three normative categories: obligations ('shall ensure'/'shall'), prohibitions ('shall not'/'No person shall'), and rights/permissions ('may')",
+        "Must identify that obligations dominate, citing several concrete examples such as: ensuring the Residents' Bill of Rights is respected (s. 3), mission statement (s. 4), written plan of care and duty to comply (s. 6), care programs (palliative/restorative/nutrition/medical, ss. 12-16), staffing/care standards (s. 21-22), policy to minimize restraining (s. 33), and assisting/consulting Councils (ss. 65, 73)",
+        "Must give specific prohibitions: cannot charge residents except as permitted (s. 94), prohibited non-arm's-length transactions (s. 96), cannot operate more beds than the licence allows (s. 107), cannot surrender the licence except with Director consent (s. 106), no reprisal/retaliation (s. 30), and no improper restraint/confinement (s. 34)",
+        "Must give specific rights/permissions: appeal rights to the Appeal Board against Director/Minister orders, administrative penalties and decisions (s. 170), plus at least one operational permission ('may') such as withdrawing admission approval, hiring certain staff as PSWs, or using residential washers/dryers"
+      ],
+      "good": [
+        "Correctly covers all three categories (obligations, prohibitions, rights) with the main examples in each",
+        "Identifies the dominant pattern of 'shall ensure' care/rights obligations and several prohibitions (e.g. charging limits, bed limits, reprisal)",
+        "Mentions the licensee's appeal/review right even if section numbers are imprecise",
+        "May miss some secondary examples or omit a few section numbers; approximate citations acceptable"
+      ],
+      "partial": "Lists a handful of licensee duties (e.g. plan of care, Bill of Rights) but does not clearly separate obligations from prohibitions and rights, or omits one whole category (e.g. gives no prohibitions or no rights/appeal provisions), and provides few specifics.",
+      "weak": "Vague or generic answer that fails to ground the structure in the Act, conflates the licensee with other actors, fabricates obligations not in the corpus, or omits two of the three normative categories."
+    },
+    "key_facts": [
+      "Source is the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and regulations (e.g. O. Reg. 246/22)",
+      "Licensee = holder of a licence under the Act, including a municipality/board of management of a municipal, joint or First Nations home (s. 2 definition)",
+      "Obligations are overwhelmingly framed as 'Every licensee ... shall ensure'",
+      "Must ensure the Residents' Bill of Rights (s. 3) is fully respected and promoted",
+      "Must ensure a written plan of care for each resident and comply with it (s. 6, including duty to comply s. 6(7))",
+      "Must maintain a written policy to minimize restraining of residents (s. 33) and ensure no improper restraint/confinement (s. 34)",
+      "Must assist in establishing a Family Council within 30 days and consult Councils regularly (ss. 65, 73)",
+      "Prohibition: shall not charge a resident except as permitted for basic/preferred accommodation (s. 94)",
+      "Prohibition: shall not enter prohibited non-arm's-length transactions or those needing Director consent (s. 96)",
+      "Prohibition: shall not operate more beds than allowed under the licence (s. 107) and shall not surrender the licence except with Director consent (s. 106)",
+      "Prohibition: no reprisal/retaliation — dismissing, disciplining, penalising, intimidating, coercing or harassing (s. 30 whistle-blowing protection)",
+      "Right: a licensee may appeal to the Appeal Board orders under ss. 155-159, Minister's order under s. 161, notice of administrative penalty under s. 158, and a Director's decision under s. 169 (s. 170)",
+      "Permissions ('may'): e.g. withdraw admission approval in limited circumstances, hire RNs/RPNs as PSWs where conditions met, provide residential washers/dryers in defined circumstances",
+      "Licensee receives funding subject to conditions, restrictions and set-off (s. 93/94) and must keep separate accounts/records per home (s. 95)"
+    ],
+    "generated_at": "2026-06-10T20:31:41.050494+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 68.42,
+    "usage": {
+      "inputTokens": 67829,
+      "cacheWriteInputTokens": 26826,
+      "cacheReadInputTokens": 31361,
+      "outputTokens": 5218
+    },
+    "cost": 1.958814
+  },
+  {
+    "index": 10,
+    "question": "What is the complete chain from a resident complaint to a sanction being issued?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (and O. Reg. 246/22), the chain from a resident complaint to a sanction proceeds through the licensee, then the Director/inspectors, and finally enforcement, as follows:\n\n1. RESIDENT'S RIGHT TO COMPLAIN. The Residents' Bill of Rights (s. 3) guarantees every resident the right to be informed of complaint procedures and to raise concerns/complaints without fear of coercion, discrimination or reprisal (rights 27 and 29). Residents receive a package of information (under the regulations) that includes the home's complaint procedure, the procedure for complaining to the Director, and how to complain to the Patient Ombudsman and the Ministry.\n\n2. COMPLAINT TO THE LICENSEE. Under s. 26, every licensee must have written procedures for initiating complaints and for how it deals with them, including how to complain to the Patient Ombudsman (under the Excellent Care for All Act, 2010) and to the Ministry.\n\n3. LICENSEE MUST INVESTIGATE, RESOLVE AND RESPOND. Under the regulation (O. Reg. 246/22, s. 108), a complaint about the care of a resident or operation of the home must be investigated and resolved where possible, with a written response within 10 business days of receipt. Where the complaint alleges harm or risk of harm (including physical harm), the investigation must begin immediately. If it cannot be resolved within 10 business days, the licensee must send an acknowledgement within 10 business days giving a date by which a response can be expected.\n\n4. LICENSEE MUST FORWARD COMPLAINTS TO THE DIRECTOR. Under s. 26(1)(c), the licensee must immediately forward to the Director any written complaint about resident care or home operation (submitted in the required format), together with required documentation (s. 26(2) and the regulation, e.g. ss. 111-112). Separately, under s. 27 the licensee must immediately investigate alleged/suspected/witnessed abuse or neglect, take appropriate action, and report results to the Director (s. 27(2)); s. 28 requires mandatory reporting to the Director of harm, abuse/neglect, unlawful conduct, or misuse of a resident's money.\n\n5. DIRECTOR TRIGGERS INSPECTION/INQUIRY. Under s. 29, when the Director receives information from any source (including a complaint or a s. 27/28 report) indicating matters such as improper/incompetent care causing harm, abuse or neglect, unlawful conduct, misuse of a resident's money or funding, or failure to comply causing harm, the Director must have an inspector conduct an inspection or make inquiries. If the information indicates serious harm or significant risk of serious harm (e.g. paras 1-3), the inspector must visit the home immediately. The Director must also order an inspection where there are reasonable grounds to believe there is a risk of harm to a resident.\n\n6. INSPECTION AND FINDINGS. Inspectors are appointed under s. 144 (the Director is an inspector by virtue of office). They exercise inspection powers (s. 150) and may obtain a warrant (s. 151).\n\n7. ENFORCEMENT ACTIONS IF NON-COMPLIANCE FOUND (s. 154). If an inspector finds the licensee has not complied with a requirement under the Act, the inspector must take at least one of: (1) issue a written notification; (2) make an order under s. 155 (e.g. a compliance order, including ordering the licensee to prepare a written plan for achieving compliance); (3) issue a notice of administrative penalty under s. 158; or (4) issue a written notification and refer the matter to the Director for further action.\n\n8. SANCTIONS. The principal sanction at inspector/Director level is the administrative penalty (s. 158): an inspector or the Director may issue a written notice requiring the licensee to pay a penalty (up to a maximum of $250,000), determined per the regulations and reflecting its statutory purpose; it cannot be issued more than two years after the failure first came to an inspector's/Director's knowledge, and is payable to the Minister of Finance (a Crown debt enforceable by filing with the Superior Court of Justice). Orders under s. 155 (and others up to s. 161), referral to the Director for further action, cease-of-admissions directions (s. 56) and ultimately licence-level consequences are also available.\n\n9. REVIEW AND APPEAL. The licensee may request the Director to review an inspector's order or notice of administrative penalty (s. 169) within 28 days; the Director may rescind, confirm, alter or substitute the order/notice. The requirement to pay an administrative penalty is stayed pending review, and there are further appeal rights to the Appeal Board (and Divisional Court).\n\nIn summary: resident complaint → licensee complaint procedure (s. 26) → licensee investigation/response within 10 business days (reg. s. 108) and immediate forwarding of written complaints to the Director (s. 26(1)(c)), plus mandatory s. 27/28 reporting → Director-triggered inspection/inquiry (s. 29) → inspector findings of non-compliance (s. 154) → order under s. 155 and/or notice of administrative penalty under s. 158 (the sanction) → review by Director (s. 169) and appeal.",
+    "grading_criteria": {
+      "excellent": [
+        "Traces the full chain in order: resident's right to complain (Bill of Rights/s.3, rights 27 & 29) → licensee complaint procedure (s.26) → licensee investigation and response → forwarding/reporting to the Director → Director-triggered inspection (s.29) → inspector non-compliance findings (s.154) → order (s.155) and/or administrative penalty (s.158)",
+        "Identifies that the licensee must investigate/resolve and respond, citing the 10-business-day response timeline and immediate investigation where harm or risk of harm is alleged (O. Reg. 246/22 s.108)",
+        "States that the licensee must immediately forward written complaints to the Director (s.26(1)(c)) and/or report abuse/neglect under ss.27-28",
+        "Explains that the Director must have an inspector conduct an inspection/inquiry when information indicates harm, abuse, neglect, unlawful conduct, or misuse of money/funding (s.29), with immediate visit for serious harm",
+        "Identifies the s.154 menu of enforcement actions (written notification, order under s.155, notice of administrative penalty under s.158, or referral to Director) and names the administrative penalty as the sanction, with the $250,000 maximum",
+        "Mentions review/appeal of the order or penalty (Director review under s.169 within 28 days)"
+      ],
+      "good": [
+        "Covers the main sequence: complaint to licensee → licensee investigates/responds → forwarded/reported to Director → inspection → enforcement action/sanction (administrative penalty or order)",
+        "Correctly identifies the administrative penalty as the key sanction and that inspectors/Director issue it",
+        "May omit some section numbers or the exact 10-business-day timeline or the $250,000 cap",
+        "May not detail review/appeal rights"
+      ],
+      "partial": "Mentions that residents can complain and that this can lead to inspection or penalties, but omits or garbles key links (e.g. the licensee's investigation/response duty, the mandatory forwarding to the Director, the inspector's role under s.29/s.154, or the administrative penalty as the sanction).",
+      "weak": "Vague or fabricated account that does not connect the complaint to the Director/inspection/enforcement steps, misattributes the sanction, or invents penalties/processes not in the Act."
+    },
+    "key_facts": [
+      "Residents' Bill of Rights (s.3) guarantees the right to make complaints free of reprisal (rights 27 and 29)",
+      "Licensees must maintain written complaint procedures (s.26), including how to complain to the Patient Ombudsman and the Ministry",
+      "Licensee must investigate and resolve a complaint and provide a written response within 10 business days; investigation must begin immediately where harm or risk of harm is alleged (O. Reg. 246/22, s.108)",
+      "Licensee must immediately forward written complaints about resident care/home operation to the Director (s.26(1)(c)), with required documentation (s.26(2))",
+      "Mandatory reporting/investigation of abuse and neglect to the Director under ss.27-28",
+      "Under s.29 the Director must have an inspector conduct an inspection or inquiry when information indicates harm, abuse, neglect, unlawful conduct, or misuse of a resident's money/funding; immediate visit for serious harm",
+      "Section 154: on finding non-compliance the inspector must do at least one of — written notification, order under s.155, notice of administrative penalty under s.158, or written notification plus referral to the Director",
+      "The sanction — a notice of administrative penalty under s.158 — may be issued by an inspector or the Director, up to a maximum of $250,000, payable to the Minister of Finance, with a two-year limitation",
+      "Section 155 orders include ordering the licensee to prepare a written plan for achieving compliance",
+      "Licensee may request the Director to review an inspector's order or penalty within 28 days (s.169); payment of an administrative penalty is stayed pending review"
+    ],
+    "generated_at": "2026-06-10T20:32:29.216582+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 48.16,
+    "usage": {
+      "inputTokens": 45922,
+      "cacheWriteInputTokens": 9843,
+      "cacheReadInputTokens": 4390,
+      "outputTokens": 4038
+    },
+    "cost": 1.18282125
+  },
+  {
+    "index": 11,
+    "question": "In what situations does the Director have a direct legal obligation toward individual residents?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021, the 'Director' (the official appointed by the Minister under section 185 to administer and enforce the Act) generally does NOT owe direct legal obligations to individual residents. The Act deliberately places almost all of the direct, individualized duties toward residents on the LICENSEE of the long-term care home (and, at the admission stage, on the placement co-ordinator), not on the Director. The Director's function is primarily systemic oversight, compliance and enforcement, with duties running to the regulatory system and the public rather than to named individuals.\n\nThis distinction is important: it is the licensee, not the Director, who must ensure the Residents' Bill of Rights (s.3) is respected, develop and follow each resident's plan of care, provide 24-hour nursing and personal care, protect residents from abuse and neglect, administer residents' trust accounts, and notify a resident's substitute decision-maker of incidents. Reporting duties (e.g. s.28 reports of harm, abuse, neglect or misuse of a resident's money, and s.27 investigation reports) run FROM licensees and others TO the Director — again positioning the Director as the recipient/enforcer rather than as the party with the direct duty to the resident.\n\nThe situations where the Director's role most directly bears on individual residents (the closest the Director comes to an obligation engaging a specific resident) are enforcement/oversight functions rather than care duties:\n- Section 29: the Director SHALL have an inspector conduct an inspection or make inquiries whenever the Director receives information from any source indicating that, in respect of a resident, there may have been improper or incompetent treatment/care causing harm or risk of harm, abuse, unlawful conduct causing harm or risk of harm, neglect, or misuse/misappropriation of a resident's money or of funding. This is a mandatory duty triggered by information about harm to residents.\n- The Director's enforcement powers (compliance orders, management orders, appointing a long-term care home supervisor, and licensing decisions) are exercised to protect 'the care, safety, security and rights of residents,' but these orders are directed at the licensee.\n\nBy contrast, the obligations to give an individual applicant notice of an eligibility determination, the reasons, and the right to appeal to the Appeal Board fall on the PLACEMENT CO-ORDINATOR (s.50(8)) and the Appeal Board (s.59), not on the Director; and the Minister (not the Director) is the party entitled to be heard on those appeals. Even the statutory immunity provisions (s.191) shield the Director from being personally liable to individuals for acts done in good faith under the Act, reinforcing that the Director's duties are public/regulatory rather than private duties owed to particular residents.\n\nIn short: the Director has essentially no direct, individualized care obligations toward residents; those run to the licensee (and placement co-ordinator). The Director's resident-facing obligations are oversight duties — chiefly the mandatory s.29 duty to order an inspection or inquiry when informed of possible harm, abuse, neglect, or financial misappropriation affecting a resident — exercised through enforcement directed at the licensee rather than through a direct duty of care owed to the individual.",
+    "grading_criteria": {
+      "excellent": [
+        "Must make the central distinction that direct, individualized duties toward residents are imposed on the LICENSEE (and placement co-ordinator), NOT on the appointed Director (s.185 official)",
+        "Must explain that the Director's role is primarily systemic oversight/enforcement (inspections, orders, licensing) rather than a direct duty of care owed to individual residents",
+        "Should identify the section 29 mandatory duty: the Director SHALL have an inspector conduct an inspection/inquiries upon receiving information of possible harm, abuse, neglect, improper care, or misuse/misappropriation of a resident's money",
+        "Should note that reporting obligations (e.g. s.28) run TO the Director rather than the Director owing them, positioning the Director as recipient/enforcer",
+        "May note that notice/appeal duties to individual applicants rest with the placement co-ordinator (s.50(8)) and Appeal Board (s.59), and/or that immunity provisions (s.191) shield the Director from personal liability to individuals"
+      ],
+      "good": [
+        "Correctly states the Director's obligations toward residents are largely indirect/oversight-based and that direct duties sit with the licensee",
+        "Identifies at least one concrete Director-resident touchpoint, especially the s.29 mandatory inspection trigger on receiving information about harm/abuse/neglect/money misuse",
+        "May miss the placement co-ordinator/Appeal Board nuance or the immunity provision",
+        "Approximate section references acceptable"
+      ],
+      "partial": "Discusses the Director and residents in general terms but conflates the appointed Director with corporate licensee 'directors' or with the licensee's care duties, without clearly establishing that direct resident obligations lie with the licensee and the Director's role is oversight/enforcement.",
+      "weak": "Fails to distinguish the Director from the licensee, fabricates direct care duties owed by the Director to residents, or gives an answer unsupported by the Act (e.g. claims the Director personally provides or guarantees care to individuals)."
+    },
+    "key_facts": [
+      "Direct duties toward individual residents are imposed on the LICENSEE, not the appointed Director",
+      "The 'Director' is the person appointed under section 185 to administer/enforce the Act (distinct from corporate directors of a licensee)",
+      "Section 29: the Director shall have an inspector conduct an inspection or make inquiries when informed that there may have been improper/incompetent care, abuse, unlawful conduct, neglect, or misuse/misappropriation of a resident's money causing harm or risk of harm to a resident",
+      "Reporting duties (e.g. section 28 critical incident reports and section 27 investigation reports) run FROM licensees/others TO the Director",
+      "Notice of eligibility determination, reasons, and the right to appeal to the Appeal Board are obligations of the placement co-ordinator (s.50(8)) and Appeal Board (s.59), not the Director",
+      "The Director's enforcement powers (compliance orders, management orders, appointment of a supervisor, licensing) are directed at the licensee to protect residents' care, safety, security and rights",
+      "Section 191 grants immunity protecting the Director from personal liability to individuals for good-faith acts under the Act"
+    ],
+    "generated_at": "2026-06-10T20:33:36.995027+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 67.78,
+    "usage": {
+      "inputTokens": 72309,
+      "cacheWriteInputTokens": 28893,
+      "cacheReadInputTokens": 83339,
+      "outputTokens": 4440
+    },
+    "cost": 2.0843872500000002
+  },
+  {
+    "index": 12,
+    "question": "What specifically is a Licensee required to report to the Director?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and its General Regulation (O. Reg. 246/22), a licensee of a long-term care home must report a range of matters to the Director. The principal reporting obligations are:\n\n1. **Mandatory reporting of serious matters (s. 28(1)).** A person — including a licensee — who has reasonable grounds to suspect that any of the following has occurred or may occur must immediately report the suspicion and the information on which it is based to the Director: (1) improper or incompetent treatment or care of a resident that resulted in harm or a risk of harm to the resident; (2) abuse of a resident by anyone, or neglect of a resident by the licensee or staff, that resulted in harm or a risk of harm to the resident; (3) unlawful conduct that resulted in harm or a risk of harm to a resident; (4) misuse or misappropriation of a resident's money; and (5) misuse or misappropriation of funding provided to a licensee under this Act or the Connecting Care Act, 2019. It is an offence to knowingly include false information in such a report.\n\n2. **Results of investigations into abuse/neglect incidents (s. 27(2)).** A licensee must investigate every alleged, suspected or witnessed incident of abuse of a resident by anyone, neglect of a resident by the licensee or staff, or anything else provided for in the regulations, and must report to the Director the results of every such investigation and every action taken in response, in the manner and with the material provided for in the regulations (O. Reg. 246/22, s. 112 — including a description of the incident, persons involved, analysis, immediate and long-term follow-up actions, and the name/title of the reporter; generally within 10 days).\n\n3. **Critical incident reports (O. Reg. 246/22, s. 115).** A licensee must ensure the Director is immediately informed, in as much detail as possible, followed by the required written report, of: (1) an emergency (including fire, unplanned evacuation, or intake of evacuees); (2) an unexpected or sudden death, including a death from accident or suicide; (3) a resident missing for three hours or more; (4) any missing resident who returns with an injury or adverse change in condition regardless of how long they were missing; (5) an outbreak of a disease of public health significance or communicable disease under the Health Protection and Promotion Act; and (6) contamination of the drinking water supply.\n\n4. **Complaints (s. 26 / O. Reg. 246/22).** A licensee must forward certain complaints to the Director along with a written report documenting the licensee's response, and provide any required documentation.\n\n5. **General and on-request reports (s. 91).** Every licensee must submit reports to the Director as provided for in the regulations, and must comply with any request from the Director at any time to submit a report on any matter in a form acceptable to the Director.\n\n6. **Non-arm's-length transactions (s. 96(3)).** Every licensee must submit reports to the Director on every non-arm's-length transaction it enters into, as provided for in the regulations (and must obtain the Director's prior consent for certain such transactions).\n\nIn addition, licensees file financial statements with the Director under the regulations, and reporting must follow the form, manner, timing, and content requirements set out in the regulations.",
+    "grading_criteria": {
+      "excellent": [
+        "Must identify the mandatory reporting of serious matters under s. 28(1): improper/incompetent treatment or care causing harm or risk of harm; abuse or neglect causing harm or risk of harm; unlawful conduct causing harm or risk of harm; misuse or misappropriation of a resident's money; and misuse/misappropriation of funding provided under the Act/Connecting Care Act",
+        "Must note the reports of investigation requirement (s. 27(2)) — reporting results of investigations into abuse/neglect incidents and the actions taken",
+        "Must reference the critical incident reporting requirements (e.g., emergencies/fire, unexpected or sudden death, missing residents, disease outbreaks, water contamination)",
+        "Should note that reports must be made immediately and/or in the manner, timing and content provided for in the regulations",
+        "May also mention general reports under s. 91, complaints forwarded to the Director, and non-arm's-length transaction reports"
+      ],
+      "good": [
+        "Correctly covers the main reportable matters under s. 28 (abuse, neglect, improper care, misuse of money/funding, unlawful conduct)",
+        "Mentions investigation results and/or critical incidents even if not all six critical incident categories are listed",
+        "May miss secondary reporting duties such as non-arm's-length transactions or s. 91 general reports",
+        "Approximate phrasing of the harm/risk-of-harm threshold acceptable"
+      ],
+      "partial": "Identifies that abuse, neglect or critical incidents must be reported but omits the broader s.28 list (misuse of money/funding, unlawful conduct, improper care) or gives only vague/general statements without specific reportable matters.",
+      "weak": "Fails to identify the specific reportable matters, confuses the Director with another body, or fabricates reporting categories not found in the Act/regulation."
+    },
+    "key_facts": [
+      "s. 28(1): a person with reasonable grounds to suspect must immediately report to the Director",
+      "Improper or incompetent treatment or care of a resident that resulted in harm or a risk of harm",
+      "Abuse of a resident by anyone or neglect by the licensee or staff resulting in harm or risk of harm",
+      "Unlawful conduct that resulted in harm or a risk of harm to a resident",
+      "Misuse or misappropriation of a resident's money",
+      "Misuse or misappropriation of funding provided under the Act or the Connecting Care Act, 2019",
+      "s. 27(2): licensee must report results of every investigation into abuse/neglect and the actions taken",
+      "O. Reg. 246/22 s. 115 critical incidents: emergency/fire, unexpected or sudden death, resident missing 3+ hours, missing resident returning with injury, disease outbreak, drinking water contamination",
+      "Reports must be made immediately and in the manner/with the material provided for in the regulations",
+      "s. 91: licensee must submit reports as provided in regulations and on request by the Director",
+      "s. 96(3): reports on non-arm's-length transactions"
+    ],
+    "generated_at": "2026-06-10T20:34:17.529292+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 40.53,
+    "usage": {
+      "inputTokens": 43967,
+      "cacheWriteInputTokens": 14666,
+      "cacheReadInputTokens": 21518,
+      "outputTokens": 3087
+    },
+    "cost": 1.1982944999999998
+  },
+  {
+    "index": 13,
+    "question": "What does the Act prohibit a Licensee from doing to a resident?",
+    "reference_answer": "The Fixing Long-Term Care Act, 2021 prohibits a licensee from restraining (and, under the amended provision, confining) a resident in certain ways. Under section 34, 'Protection from certain restraining' (which on proclamation becomes 'Protection from restraining and confining'), every licensee of a long-term care home shall ensure that no resident of the home is: (1) restrained (or confined) in any way for the convenience of the licensee or staff; (2) restrained (or confined) in any way as a disciplinary measure; (3) restrained by the use of a physical device, other than in accordance with section 35 or the common law duty in section 39; (4) restrained by the administration of a drug to control the resident, other than under the common law duty in section 39; and (under the amended version, (5)) confined other than in accordance with section 34.1 or the common law duty in section 39.\n\nMore broadly, the Act also prohibits the licensee from abusing or neglecting residents. Section 24 imposes a duty to protect: every licensee shall protect residents from abuse by anyone and shall ensure that residents are not neglected by the licensee or staff (reflected in the Residents' Bill of Rights, paragraphs 4 and 5: freedom from abuse and freedom from neglect by the licensee and staff). The Act further prohibits retaliation: a resident shall not be discharged, threatened with discharge, or in any way be subjected to discriminatory treatment because of a disclosure, report or complaint, even if the resident or another person acted maliciously or in bad faith (s. 26/retaliation provision).\n\nThe core prohibition the question targets is the restraining/confining prohibition in section 34 — the licensee may not restrain or confine a resident for convenience, as discipline, by physical device, or by a controlling drug, except in the limited, regulated circumstances the Act permits.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies that the Act prohibits a licensee from restraining (and confining) a resident, citing section 34 (Protection from certain restraining / Protection from restraining and confining)",
+        "Lists the specific prohibited forms: restraining/confining for the convenience of the licensee or staff; as a disciplinary measure; by physical device (except per s.35 or common law duty s.39); and by administration of a drug to control the resident (except per common law duty s.39)",
+        "Notes these prohibitions are subject to limited exceptions (plan of care under s.35, common law duty under s.39)",
+        "May also mention the broader prohibitions on abuse and neglect (duty to protect, s.24) and on retaliation/discriminatory treatment or discharge"
+      ],
+      "good": [
+        "Correctly states the licensee may not restrain or confine a resident for convenience or as discipline, or improperly by physical device or controlling drugs",
+        "Captures the general idea that restraint is only allowed in limited regulated circumstances",
+        "May omit some of the four/five enumerated paragraphs or the exact section number"
+      ],
+      "partial": "Mentions only that the licensee cannot abuse/neglect a resident or generally cannot mistreat residents, without addressing the restraining/confining prohibitions of section 34.",
+      "weak": "Fails to identify any specific prohibition, gives only vague statements about residents' rights, or fabricates prohibitions not in the Act."
+    },
+    "key_facts": [
+      "Section 34: 'Protection from certain restraining' (amended to 'Protection from restraining and confining')",
+      "Prohibited: restraining/confining a resident for the convenience of the licensee or staff",
+      "Prohibited: restraining/confining a resident as a disciplinary measure",
+      "Prohibited: restraining by use of a physical device other than per section 35 or the common law duty in section 39",
+      "Prohibited: restraining by administration of a drug to control the resident other than under the common law duty in section 39",
+      "Section 24 duty to protect: licensee must protect residents from abuse and ensure they are not neglected by the licensee or staff",
+      "Residents' Bill of Rights includes freedom from abuse and freedom from neglect by the licensee and staff",
+      "Prohibition on retaliation: a resident shall not be discharged, threatened with discharge, or subjected to discriminatory treatment"
+    ],
+    "generated_at": "2026-06-10T20:34:45.380566+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 27.85,
+    "usage": {
+      "inputTokens": 27566,
+      "cacheWriteInputTokens": 7886,
+      "cacheReadInputTokens": 8467,
+      "outputTokens": 2173
+    },
+    "cost": 0.737028
+  },
+  {
+    "index": 14,
+    "question": "Who is responsible for investigating a complaint about abuse?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (Ontario), the primary responsibility for investigating a complaint or incident of abuse lies with the LICENSEE of the long-term care home. The licensee must ensure that every alleged, suspected or witnessed incident that it knows of, or that is reported to it, is immediately investigated where it involves (i) abuse of a resident by anyone, (ii) neglect of a resident by the licensee or staff, or (iii) anything else provided for in the regulations. The licensee must ensure appropriate action is taken in response to every such incident, and must comply with any regulatory requirements for investigating and responding. After investigating, the licensee must report to the DIRECTOR the results of every investigation and every action taken, in the manner provided for in the regulations.\n\nThe licensee is also required to have written complaints procedures and must immediately forward to the Director any written complaint it receives concerning the care of a resident or the operation of the home.\n\nIn addition, the DIRECTOR (the person appointed under section 185) plays an oversight/enforcement role: under section 29, where the Director receives information from any source indicating that abuse, improper or incompetent treatment causing harm/risk of harm, unlawful conduct, or misuse/misappropriation of money may have occurred, the Director SHALL have an INSPECTOR conduct an inspection or make inquiries to ensure compliance with the Act. Complaints can also be directed to the Ministry and to the Patient Ombudsman under the Excellent Care for All Act, 2010.\n\nIn summary: the licensee of the home is responsible for immediately investigating abuse complaints/incidents and reporting results to the Director, while the Director (through inspectors) and the Ministry provide external investigation and oversight.",
+    "grading_criteria": {
+      "excellent": [
+        "Must identify the LICENSEE of the long-term care home as the party primarily responsible for immediately investigating alleged, suspected or witnessed abuse (or complaints/incidents of abuse)",
+        "Must note that the abuse to be investigated includes abuse by 'anyone' and neglect by the licensee or staff",
+        "Must mention that the licensee must report the results of the investigation (and actions taken) to the Director",
+        "Should also identify the Director's external/oversight role under section 29 — that the Director has an inspector conduct an inspection or make inquiries when information indicating abuse is received",
+        "May reference that complaints can go to the Ministry and the Patient Ombudsman"
+      ],
+      "good": [
+        "Correctly identifies the licensee as responsible for investigating abuse complaints/incidents",
+        "Mentions reporting to the Director and/or the Director/inspector oversight role",
+        "May omit minor details such as the Patient Ombudsman, regulatory references, or exact section numbers"
+      ],
+      "partial": "Identifies that the home/licensee investigates but is vague about reporting to the Director or the inspector/Director oversight role, or conflates investigation with the duty to report abuse.",
+      "weak": "Fails to identify the licensee, names the wrong party (e.g. only the police or only the resident), or fabricates a body not in the Act."
+    },
+    "key_facts": [
+      "The licensee must ensure that every alleged, suspected or witnessed incident of abuse it knows of or that is reported to it is immediately investigated",
+      "Abuse to be investigated includes abuse of a resident 'by anyone' and neglect by the licensee or staff",
+      "The licensee must ensure appropriate action is taken in response to every such incident",
+      "The licensee must report to the Director the results of every investigation and every action taken",
+      "Under section 29, the Director shall have an inspector conduct an inspection or make inquiries when information indicating abuse or harm is received",
+      "Licensees must have written complaints procedures and must immediately forward written complaints to the Director",
+      "Complaints can also be made to the Ministry and to the Patient Ombudsman under the Excellent Care for All Act, 2010"
+    ],
+    "generated_at": "2026-06-10T20:35:10.897619+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 25.51,
+    "usage": {
+      "inputTokens": 23926,
+      "cacheWriteInputTokens": 5133,
+      "cacheReadInputTokens": 4395,
+      "outputTokens": 1935
+    },
+    "cost": 0.6068512500000001
+  },
+  {
+    "index": 15,
+    "question": "What standards must a long-term care home comply with?",
+    "reference_answer": "Under Ontario's Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1) and its General regulation (O. Reg. 246/22), the licensee of a long-term care home must comply with a layered set of standards and requirements set out in the Act and its regulations. The key categories are:\n\n1. Staffing and care standards (s. 21): Every licensee must ensure the home meets the staffing and care standards provided for in the regulations.\n\n2. Standards for programs and services (s. 22): Every licensee must ensure that the programs required under sections 11 to 20, the services provided under them, and anything else required under those sections comply with any standards or requirements — including outcome/outcome measures — provided for in the regulations. This covers the organized programs the Act mandates, such as nursing and personal support services (s. 11), palliative care (s. 12), restorative care (s. 13), recreational and social activities, dietary services and hydration/nutritional care (s. 15), religious and spiritual programs (s. 18), accommodation services such as housekeeping, laundry and maintenance (s. 19), and volunteer programs (s. 20).\n\n3. Direct-hours-of-care targets (ss. 8–9): The home must work toward statutory direct care targets — an average of four hours of direct care per resident per day from personal support workers, registered nurses and registered practical nurses (to be achieved no later than March 31, 2025, with interim steps of 3 hours by March 31, 2022, 3 hours 15 minutes by March 31, 2023, and 3 hours 42 minutes by March 31, 2024), plus an average of 36 minutes of direct care per resident per day from allied health care professionals (no later than March 31, 2023).\n\n4. Infection prevention and control (s. 23): The licensee must ensure the IPAC program — including surveillance/monitoring, measures to prevent transmission, and a hand hygiene program — complies with any standards and requirements, including required outcomes and accountability measures, provided in the regulations.\n\n5. Standards established by regulation: The Lieutenant Governor in Council can make regulations establishing standards or outcomes that must be met, including temperature requirements, design/structural requirements (e.g., a design manual applicable under a development agreement), nutrition and dietary standards, food safety/food handler training standards, minimum staffing for cooks and food service workers, and quality-of-care program standards (falls prevention, skin and wound care, continence and bowel management, pain management, responsive behaviours, etc.).\n\n6. Overarching obligations: All of this is governed by the fundamental principle (s. 1) that the home is primarily the home of its residents, by the Residents' Bill of Rights (s. 3), and by requirements such as the French Language Services Act and zero-tolerance abuse/neglect policies. Compliance is enforced through inspections and progressive enforcement actions, and a 'requirement under this Act' includes licence conditions, approval conditions, funding conditions and ministerial directives.\n\nIn short, a long-term care home must comply with: the staffing and care standards in the regulations (s. 21); the standards, requirements and outcome measures for required programs and services (s. 22); the direct-hours-of-care targets (ss. 8–9); the infection prevention and control standards (s. 23); and the various standards/outcomes established by the regulations (design, nutrition, food safety, and specific care programs), all within the framework of the Act, the Residents' Bill of Rights, licence/funding conditions and ministerial directives.",
+    "grading_criteria": {
+      "excellent": [
+        "Identifies that the source is Ontario's Fixing Long-Term Care Act, 2021 and that standards are set in the Act and its regulations (O. Reg. 246/22)",
+        "Names the staffing and care standards requirement (s. 21 — licensee must ensure the home meets staffing and care standards in the regulations)",
+        "Names the standards for programs and services requirement (s. 22 — programs/services under ss. 11–20 must comply with standards/requirements including outcome measures)",
+        "Mentions the direct-hours-of-care targets (s. 8: average of four hours of direct care per resident per day by PSWs/RNs/RPNs; s. 9: 36 minutes by allied health care professionals)",
+        "Mentions infection prevention and control standards (s. 23) and at least one further regulation-based standard area (design/temperature, nutrition/dietary, food safety, or care programs like falls, skin/wound, pain, responsive behaviours)"
+      ],
+      "good": [
+        "Covers the main statutory standards: staffing and care standards (s. 21) and standards for programs/services (s. 22)",
+        "Mentions at least one of: direct care hour targets, IPAC standards, or regulation-established standards",
+        "Approximate figures acceptable (e.g., 'four hours of direct care per day') even if exact target dates omitted",
+        "May miss some secondary standard categories or specific section numbers"
+      ],
+      "partial": "Answer states only generally that homes must comply with standards/regulations under the Act without identifying the specific categories (staffing and care, programs and services, direct care hours, IPAC), or lists only one standard area.",
+      "weak": "Answer is vague, cites the wrong statute, fabricates standards or figures, or fails to connect the requirement to the Fixing Long-Term Care Act and its regulations."
+    },
+    "key_facts": [
+      "Section 21: licensee must ensure the home meets the staffing and care standards provided for in the regulations",
+      "Section 22: programs required under ss. 11–20, services under them and anything else required must comply with standards or requirements, including outcome measures, in the regulations",
+      "Section 8: target of an average of four hours of direct care per resident per day by personal support workers, registered nurses and registered practical nurses, by March 31, 2025 (interim: 3 hrs by 2022, 3 hrs 15 min by 2023, 3 hrs 42 min by 2024)",
+      "Section 9: target of an average of 36 minutes of direct care per resident per day by allied health care professionals by March 31, 2023",
+      "Section 23: infection prevention and control program must comply with standards and requirements, including required outcomes and accountability measures, in the regulations",
+      "Regulations (O. Reg. 246/22) establish further standards/outcomes: design manual/structural requirements, temperature, nutrition and dietary services, food safety/food handler training, minimum staffing for cooks and food service workers, and care programs (falls prevention, skin and wound care, continence/bowel, pain management, responsive behaviours)",
+      "The governing statute is the Fixing Long-Term Care Act, 2021 (S.O. 2021, c. 39, Sched. 1)",
+      "A 'requirement under this Act' includes licence conditions, approval conditions, funding conditions and ministerial operational/policy directives; compliance is enforced through inspections and progressive enforcement"
+    ],
+    "generated_at": "2026-06-10T20:35:55.641444+00:00",
+    "research_model": "claude-opus-4-8",
+    "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
+    "duration_s": 44.74,
+    "usage": {
+      "inputTokens": 39522,
+      "cacheWriteInputTokens": 14197,
+      "cacheReadInputTokens": 20867,
+      "outputTokens": 3124
+    },
+    "cost": 1.1246242499999999
   }
 ]

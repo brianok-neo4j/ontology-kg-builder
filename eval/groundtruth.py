@@ -268,6 +268,13 @@ def generate_groundtruth(
         )
         print(f"    done in {duration:.1f}s — ${cost:.4f}")
 
+    # Final write ensures skipped (existing) entries at the tail are persisted.
+    # The incremental write inside the loop only fires for researched questions,
+    # so a --resume run that skips trailing questions would otherwise truncate.
+    out_path.write_text(
+        json.dumps(results, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     print(f"\nTotal research cost: ${total_cost:.4f}")
     print(f"Groundtruth written to: {out_path}")
     return out_path
