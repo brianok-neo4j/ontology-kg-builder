@@ -139,6 +139,9 @@ worse than a missing one. Within that bound, be exhaustive.
 
 7. Do not create any nodes or edges that reference the ontology layer
    (EntityType, RelType). The instance graph is fully separate.
+   Never create `[:SUBCLASS_OF]` or `[:SAME_AS]` relationships between instance
+   nodes — these are schema-level hierarchy edges that exist only between
+   EntityType nodes and are managed exclusively by the ontology enhancer.
 
 8. Do not call `read_cypher` to inspect EntityType / RelType — the cached
    snapshot above is authoritative. Targeted reads for debugging a write are

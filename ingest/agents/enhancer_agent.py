@@ -76,20 +76,37 @@ The snapshot below gives you the `full_description` of each type/relationship so
 you can judge equivalence. Whenever you create or update a type/edge you MUST set
 **both** `short_description` and `full_description`.
 
-`RelType` is a relationship type, NOT a node label. Do not `MERGE (r:RelType {...})`
-— that creates a stray node that no other query can see. Always create RelTypes as
-edges between two existing EntityType nodes:
+The graph uses **two different kinds of ontology edges** — keep them separate:
 
+**Domain RelType edges** (for all semantic relationships the instance agent will use):
 ```cypher
-MATCH (from:EntityType {entityLabel: 'ChildLabel'})
-MATCH (to:EntityType   {entityLabel: 'ParentLabel'})
-MERGE (from)-[r:RelType {relLabel: 'SUBCLASS_OF'}]->(to)
-SET r.short_description = 'is a kind of ParentLabel',
-    r.full_description  = 'ChildLabel is a kind of ParentLabel — ...'
+MATCH (from:EntityType {entityLabel: 'Obligation'})
+MATCH (to:EntityType   {entityLabel: 'Role'})
+MERGE (from)-[r:RelType {relLabel: 'APPLIES_TO'}]->(to)
+SET r.short_description = '...', r.full_description = '...'
 ```
+`RelType` is a relationship type, NOT a node label. Do not `MERGE (r:RelType {...})`
+— that creates a stray node. Always write RelType edges as shown above.
 
-Same pattern for `SAME_AS` (between equivalent EntityTypes) and for any rewired
-edge. To create a new parent EntityType:
+**Hierarchy edges** (`SUBCLASS_OF` and `SAME_AS` only): these are first-class
+Neo4j relationship types between EntityType nodes — **not** wrapped in a `RelType`
+edge. Write them directly:
+```cypher
+MATCH (child:EntityType  {entityLabel: 'ChildLabel'})
+MATCH (parent:EntityType {entityLabel: 'ParentLabel'})
+MERGE (child)-[:SUBCLASS_OF]->(parent)
+```
+```cypher
+MATCH (a:EntityType {entityLabel: 'TypeA'})
+MATCH (b:EntityType {entityLabel: 'TypeB'})
+MERGE (a)-[:SAME_AS]->(b)
+```
+These edges carry no properties (the label is self-documenting). The query agent
+traverses `[:SUBCLASS_OF]` and `[:SAME_AS]` directly to understand type hierarchy
+and equivalence — they must be stored as real relationship types, not encoded as
+`relLabel` properties.
+
+To create a new parent EntityType:
 
 ```cypher
 MERGE (p:EntityType {entityLabel: 'NewParent'})
@@ -152,9 +169,14 @@ either:
   a) Merging: copy any RelType edges from one to the other, then delete the
      redundant EntityType node. Update the surviving node's `description` if
      needed so it reflects the combined concept.
-  b) Linking: add a RelType edge between them with relLabel = "SAME_AS" (and a
-     description explaining the equivalence) when both forms should be
-     preserved for traceability.
+  b) Linking: add a direct `[:SAME_AS]` relationship between them when both
+     forms should be preserved for traceability (NOT a RelType edge with
+     relLabel='SAME_AS'):
+     ```cypher
+     MATCH (a:EntityType {entityLabel: 'CEO'})
+     MATCH (b:EntityType {entityLabel: 'ChiefExecutiveOfficer'})
+     MERGE (a)-[:SAME_AS]->(b)
+     ```
 
 ### 2. Overly granular EntityTypes
 If several EntityTypes are specific variants of the same general concept —
@@ -166,10 +188,15 @@ type. Set a `description` on the consolidated type that covers the full scope.
 ### 3. Hierarchy opportunities
 If a group of EntityTypes are all subtypes of a common concept (use their
 descriptions to confirm the shared semantics), introduce a parent EntityType
-with its own `description`, and connect each subtype to it with a RelType edge
-where relLabel = "SUBCLASS_OF" and a description such as "<subtype> is a kind
-of <parent>". For example: "CommonStock", "PreferredStock", and
-"ConvertibleNote" might all be SUBCLASS_OF "Security".
+with its own `description`, and connect each subtype to it with a direct
+`[:SUBCLASS_OF]` relationship (NOT a RelType edge). For example:
+"CommonStock", "PreferredStock", and "ConvertibleNote" might all be
+SUBCLASS_OF "Security":
+```cypher
+MATCH (child:EntityType {entityLabel: 'CommonStock'})
+MATCH (parent:EntityType {entityLabel: 'Security'})
+MERGE (child)-[:SUBCLASS_OF]->(parent)
+```
 
 ### 4. Jurisdiction- or organization-specific labels
 Entity labels should be reusable across jurisdictions and contexts. If any
@@ -220,6 +247,10 @@ def _fetch_ontology_snapshot() -> dict:
     The enhancer judges equivalence/hierarchy from descriptions, so it embeds the
     `full_description` (it's a single cached snapshot — size isn't a concern here,
     unlike the per-chunk agents which embed `short_description`).
+
+    Hierarchy edges ([:SUBCLASS_OF] and [:SAME_AS] between EntityType nodes) are
+    stored as direct Neo4j relationship types — not as RelType edges — so they are
+    fetched separately and included under dedicated keys.
     """
     entity_types = _run(
         """
@@ -239,7 +270,26 @@ def _fetch_ontology_snapshot() -> dict:
         ORDER BY a.entityLabel, r.relLabel, b.entityLabel
         """
     )
-    return {"entity_types": entity_types, "relationships": rels}
+    subclass_of = _run(
+        """
+        MATCH (child:EntityType)-[:SUBCLASS_OF]->(parent:EntityType)
+        RETURN child.entityLabel AS child, parent.entityLabel AS parent
+        ORDER BY child.entityLabel
+        """
+    )
+    same_as = _run(
+        """
+        MATCH (a:EntityType)-[:SAME_AS]->(b:EntityType)
+        RETURN a.entityLabel AS a, b.entityLabel AS b
+        ORDER BY a.entityLabel
+        """
+    )
+    return {
+        "entity_types": entity_types,
+        "relationships": rels,
+        "subclass_of": subclass_of,
+        "same_as": same_as,
+    }
 
 
 def build_mcp_client() -> MCPClient:

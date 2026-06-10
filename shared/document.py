@@ -19,22 +19,44 @@ _MIN_SECTION_CHARS = 200
 _XBRL_UNWRAP = frozenset({"ix:nonfraction", "ix:nonnumeric", "ix:continuation"})
 
 
-def load_documents(path: str | Path) -> Generator[Chunk, None, None]:
+def load_documents(
+    path: str | Path,
+    no_split: bool = False,
+) -> Generator[Chunk, None, None]:
     """Yield (doc_path, chunk_text, chunk_index) for every chunk in path.
 
     path may be a single file or a directory; directories are walked recursively.
     Supported formats: .txt .md .rst .csv .json .pdf .html .htm
+
+    When no_split=True each file is returned as a single chunk with no
+    internal splitting. Use this when each file is already a complete semantic
+    unit (e.g. one accident report per file) and splitting would disconnect
+    header metadata from narrative content.
     """
     root = Path(path)
     files = sorted(root.rglob("*")) if root.is_dir() else [root]
     for file in files:
         if file.suffix.lower() not in _SUPPORTED:
             continue
-        yield from _chunk_file(file)
+        yield from _chunk_file(file, no_split=no_split)
 
 
-def _chunk_file(file: Path) -> Generator[Chunk, None, None]:
+def _chunk_file(file: Path, no_split: bool = False) -> Generator[Chunk, None, None]:
     suffix = file.suffix.lower()
+    if no_split:
+        if suffix == ".pdf":
+            text = _extract_pdf(file)
+        elif suffix in {".html", ".htm"}:
+            from bs4 import BeautifulSoup
+            raw = file.read_text(encoding="utf-8", errors="replace")
+            text = BeautifulSoup(raw, "html.parser").get_text(separator="\n")
+        else:
+            text = file.read_text(encoding="utf-8", errors="replace")
+        text = text.strip()
+        if text:
+            yield str(file), text, 0
+        return
+
     if suffix == ".pdf":
         sections = _split_paragraphs(_extract_pdf(file))
     elif suffix in {".html", ".htm"}:

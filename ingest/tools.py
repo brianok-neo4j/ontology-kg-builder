@@ -42,8 +42,27 @@ def get_ontology_schema() -> str:
                r.{field} AS description
         """
     )
+    subclass_of = _run(
+        """
+        MATCH (child:EntityType)-[:SUBCLASS_OF]->(parent:EntityType)
+        RETURN child.entityLabel AS child, parent.entityLabel AS parent
+        ORDER BY child.entityLabel
+        """
+    )
+    same_as = _run(
+        """
+        MATCH (a:EntityType)-[:SAME_AS]->(b:EntityType)
+        RETURN a.entityLabel AS a, b.entityLabel AS b
+        ORDER BY a.entityLabel
+        """
+    )
     return json.dumps(
-        {"entity_types": entity_types, "relationships": rels},
+        {
+            "entity_types": entity_types,
+            "relationships": rels,
+            "subclass_of": subclass_of,
+            "same_as": same_as,
+        },
         indent=2,
     )
 

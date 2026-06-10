@@ -80,6 +80,13 @@ Write a Cypher query that:
 - Parameterizes entity names (use $params, not string interpolation).
 - Returns the minimum columns needed to answer the question.
 - Adds `LIMIT 100` unless the question explicitly asks for counts/aggregates.
+- If your answer will assert a frequency, rank, or ordering ("most common",
+  "most frequent", "top N", "dominated by"), run an aggregation query with
+  COUNT or SUM to verify — never rank from recall or pattern-match
+  intuition alone.
+- If the question implies exclusivity or contrast ("only in X", "not in Y",
+  "unique to", "does not appear in"), run separate queries for both sides
+  and compare the result sets explicitly before drawing a conclusion.
 - Is read-only — no CREATE, MERGE, SET, DELETE, REMOVE, DROP, LOAD CSV.
 
 ## Step 4 — Execute
@@ -91,6 +98,12 @@ Call `run_read_cypher` with the query and parameters.
 Write a concise natural-language answer grounded in the returned rows. If
 the result is empty, say so plainly and propose one refinement (e.g. a
 relaxed match or a different entity type) — don't fabricate.
+
+Every specific entity name, accident identifier, location, regulation, or
+example you include in your answer must have appeared in a run_read_cypher
+result during this session. If you cannot retrieve a specific example from
+the graph to support a claim, either omit the example or state explicitly
+that you could not verify it.
 
 Never skip step 1 or step 2. If a question is genuinely schema-free
 (e.g. "how many nodes are there?"), state that and answer directly.
@@ -124,8 +137,27 @@ def _fetch_ontology_schema_json() -> str:
                r.{field} AS description
         """
     )
+    subclass_of = _run(
+        """
+        MATCH (child:EntityType)-[:SUBCLASS_OF]->(parent:EntityType)
+        RETURN child.entityLabel AS child, parent.entityLabel AS parent
+        ORDER BY child.entityLabel
+        """
+    )
+    same_as = _run(
+        """
+        MATCH (a:EntityType)-[:SAME_AS]->(b:EntityType)
+        RETURN a.entityLabel AS a, b.entityLabel AS b
+        ORDER BY a.entityLabel
+        """
+    )
     return json.dumps(
-        {"entity_types": entity_types, "relationships": rels},
+        {
+            "entity_types": entity_types,
+            "relationships": rels,
+            "subclass_of": subclass_of,
+            "same_as": same_as,
+        },
         indent=2,
     )
 

@@ -734,6 +734,75 @@ def run_ontology(
     return log_file
 
 
+def run_load_ontology(json_path: str) -> None:
+    """Load a hand-authored ontology JSON into Neo4j, bypassing Agent 1.
+
+    The JSON must match the snapshot format returned by _fetch_ontology_snapshot():
+        {
+          "entity_types": [{"entityLabel": "...", "description": "..."}, ...],
+          "relationships": [
+            {"from_entityLabel": "...", "relLabel": "...",
+             "to_entityLabel": "...", "description": "..."},
+            ...
+          ]
+        }
+
+    Idempotent: safe to re-run — uses MERGE everywhere. Existing descriptions
+    are overwritten with whatever is in the file.
+    """
+    data = json.loads(Path(json_path).read_text(encoding="utf-8"))
+    entity_types = data.get("entity_types", [])
+    relationships = data.get("relationships", [])
+
+    print(f"\n=== Loading ontology from {json_path} ===")
+    print(f"  {len(entity_types)} entity type(s), {len(relationships)} relationship(s)")
+
+    _bootstrap_ontology_base()
+
+    for et in entity_types:
+        _run(
+            """
+            MERGE (e:EntityType {entityLabel: $label})
+            SET e.short_description = $description,
+                e.full_description = $description
+            """,
+            {"label": et["entityLabel"], "description": et.get("description", "")},
+        )
+    print(f"  Loaded {len(entity_types)} EntityType nodes")
+
+    loaded = skipped = 0
+    for rel in relationships:
+        result = _run(
+            """
+            MATCH (a:EntityType {entityLabel: $from_label})
+            MATCH (b:EntityType {entityLabel: $to_label})
+            MERGE (a)-[r:RelType {relLabel: $rel_label}]->(b)
+            SET r.short_description = $description,
+                r.full_description = $description
+            RETURN count(r) AS n
+            """,
+            {
+                "from_label": rel["from_entityLabel"],
+                "rel_label": rel["relLabel"],
+                "to_label": rel["to_entityLabel"],
+                "description": rel.get("description", ""),
+            },
+        )
+        if result and result[0].get("n", 0) > 0:
+            loaded += 1
+        else:
+            print(
+                f"  WARNING: skipped {rel['from_entityLabel']}"
+                f" -[{rel['relLabel']}]-> {rel['to_entityLabel']}"
+                f" (one or both EntityTypes missing)"
+            )
+            skipped += 1
+
+    print(f"  Loaded {loaded}/{len(relationships)} RelType edges"
+          + (f" ({skipped} skipped)" if skipped else ""))
+    print("\nDone.")
+
+
 def run_enhance(model_id: str | None = None) -> None:
     effective_model = model_id or ENHANCER_MODEL_ID
     log_file = _open_log(
@@ -775,8 +844,9 @@ def run_instance(
     verbose_summary: bool = False,
     model_id: str | None = None,
     concurrency: int = 5,
+    no_split: bool = False,
 ) -> Path:
-    chunks = list(load_documents(path))
+    chunks = list(load_documents(path, no_split=no_split))
     if not chunks:
         print(f"No supported documents found at: {path}")
         return
@@ -1045,11 +1115,32 @@ if __name__ == "__main__":
         ),
     )
     p_instance.add_argument(
+        "--no-split",
+        action="store_true",
+        default=False,
+        help=(
+            "Load each file as a single chunk with no internal splitting. "
+            "Use when each file is already a complete semantic unit (e.g. one "
+            "accident report per file). Without this flag, files are split on "
+            "blank lines, which disconnects header metadata from narrative content."
+        ),
+    )
+    p_instance.add_argument(
         "--trace-logs",
         action=argparse.BooleanOptionalAction,
         default=_LOG_TRACES,
         help="Log per-call message traces (tool calls + text) for later analysis. "
              "On by default; --no-trace-logs to disable. Env: INGEST_LOG_TRACES=0.",
+    )
+
+    p_load = subparsers.add_parser(
+        "load-ontology",
+        help="Load a hand-authored ontology JSON into Neo4j, bypassing Agent 1.",
+    )
+    p_load.add_argument(
+        "json_file",
+        help="Path to an ontology JSON file in snapshot format "
+             "({entity_types: [...], relationships: [...]}).",
     )
 
     p_cost = subparsers.add_parser(
@@ -1084,6 +1175,9 @@ if __name__ == "__main__":
             verbose_summary=args.verbose_summary,
             model_id=args.model,
             concurrency=args.concurrency,
+            no_split=args.no_split,
         )
+    elif args.command == "load-ontology":
+        run_load_ontology(args.json_file)
     elif args.command == "cost":
         run_cost(args.log_file)
