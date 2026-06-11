@@ -10,3 +10,4 @@ logs/
 eval/results/
 .DS_Store
 .claude/
+faa/*
