@@ -20,7 +20,10 @@ from pathlib import Path
 
 from query.agent import build_agent as build_query_agent
 from eval.models import USAGE_KEYS, cost_of
-from eval.judge import GRADES, build_judge, grade_answer
+from eval.judge import (
+    GRADES, build_judge, grade_answer,
+    build_judge_no_tools, grade_answer_with_reference,
+)
 from eval.metrics_log import log_call, open_log
 
 
@@ -37,12 +40,21 @@ def load_source_text(source: str | None) -> str | None:
     return "\n\n".join(chunks) if chunks else None
 
 
-def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dict]:
+def _run_one_model(
+    model_id: str,
+    questions: list[str],
+    run_id: str,
+    question_indices: list[int] | None = None,
+) -> list[dict]:
     """Run every question through one model; return per-question records.
 
     One agent per model, conversation reset per question so each question is
     independent and its metrics are isolated. accumulated_usage is cumulative
     across questions, so we diff against the previous question.
+
+    question_indices, when provided, maps each position to its original 1-based
+    question number so --only runs preserve correct groundtruth lookup and report
+    labels. When absent, positions are numbered 1..N as usual.
 
     Also writes a per-model `<run_id>_query_<model>_metrics.jsonl` in the
     ingest/query metrics format so `cost_watch.py` / `ingest cost` can read it.
@@ -54,26 +66,33 @@ def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dic
     )
     prev = {k: 0 for k in USAGE_KEYS}
     prev_cycles = 0
+    prev_trace_n = 0
     rows: list[dict] = []
-    for i, q in enumerate(questions, 1):
+    for pos, q in enumerate(questions):
+        i = question_indices[pos] if question_indices else pos + 1
         agent.messages = []
         print(f"  [{model_id}] Q{i}/{len(questions)}: {q[:60]}...", flush=True)
         t0 = time.time()
         try:
             result = agent(q)
             answer = str(result)
-            summary = result.metrics.get_summary() if result and result.metrics else {}
+            metrics = result.metrics if result and result.metrics else None
+            summary = metrics.get_summary() if metrics else {}
+            all_traces = [t.to_dict() for t in (metrics.traces if metrics else [])]
         except Exception as exc:  # noqa: BLE001 — record the failure, keep going
             answer = f"ERROR: {type(exc).__name__}: {exc}"
             summary = {}
+            all_traces = []
         duration = time.time() - t0
 
         cum = summary.get("accumulated_usage", {})
         cum_cycles = summary.get("total_cycles", 0)
         usage = {k: cum.get(k, 0) - prev[k] for k in USAGE_KEYS}
         cycles = cum_cycles - prev_cycles
+        traces = all_traces[prev_trace_n:]
         prev = {k: cum.get(k, 0) for k in USAGE_KEYS}
         prev_cycles = cum_cycles
+        prev_trace_n = len(all_traces)
         cost = cost_of(usage, model_id)
 
         rows.append({
@@ -88,9 +107,10 @@ def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dic
         })
         log_call(
             log_path, "query_question",
-            model_id=model_id, question_num=i, question=q,
+            model_id=model_id, question_num=i, question=q, answer=answer,
             usage=usage, cycles=cycles, duration_s=round(duration, 2), cost=cost,
             error=answer.startswith("ERROR:"),
+            traces=traces,
         )
     return rows
 
@@ -98,19 +118,52 @@ def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dic
 def _judge_all(
     by_model: dict[str, list[dict]], source: str | None,
     judge_model: str | None, run_id: str,
+    groundtruth: list[dict] | None = None,
 ) -> None:
     """Grade every answer in-place with the LLM judge (adds grade/rationale/evidence).
+
+    If groundtruth is provided (a list of reference entries from eval/groundtruth.py),
+    the judge is tool-free and grades against the stored reference — faster, cheaper,
+    and consistent. Otherwise falls back to the original path: source-doc + web search.
 
     Writes a `<run_id>_judge_<model>_metrics.jsonl` so judging cost is tracked in
     the same format as everything else, priced at the judge model's own rate.
     """
+    n_gradings = sum(len(rows) for rows in by_model.values())
+
+    if groundtruth:
+        gt_by_index = {entry["index"]: entry for entry in groundtruth}
+        print(f"\n=== Judging answers against stored groundtruth "
+              f"({judge_model or 'default judge'}, {n_gradings} gradings) ===")
+        judge = build_judge_no_tools(model_id=judge_model)
+        log_path = open_log(
+            run_id, "query-ab", judge._model_id, role="judge",
+            question_count=n_gradings, chunk_count=n_gradings,
+        )
+        for model, rows in by_model.items():
+            for r in rows:
+                ref_entry = gt_by_index.get(r["q"])
+                if ref_entry is None:
+                    print(f"  [{model}] Q{r['q']}: no groundtruth entry — skipping")
+                    r["grade"] = "Ungraded"
+                    continue
+                verdict = grade_answer_with_reference(judge, r["question"], r["answer"], ref_entry)
+                r.update(verdict)
+                print(f"  [{model}] Q{r['q']}: {verdict['grade']}")
+                log_call(
+                    log_path, "judge",
+                    model_id=judge._model_id, answer_model=model, question_num=r["q"],
+                    usage=verdict.get("judge_usage", {}), cost=verdict.get("judge_cost", 0.0),
+                    grade=verdict.get("grade", ""),
+                )
+        return
+
     doc_text = load_source_text(source)
     if source and not doc_text:
         print(f"  ! could not load source document {source!r}; judging with web + knowledge only")
     print(f"\n=== Judging answers ({judge_model or 'default judge'}"
           f"{', with source doc' if doc_text else ', no source doc'}) ===")
     judge = build_judge(doc_text=doc_text, model_id=judge_model)
-    n_gradings = sum(len(rows) for rows in by_model.values())
     log_path = open_log(
         run_id, "query-ab", judge._model_id, role="judge",
         question_count=n_gradings, chunk_count=n_gradings,
@@ -135,11 +188,14 @@ def run_query_ab(
     judge: bool = False,
     source: str | None = None,
     judge_model: str | None = None,
+    groundtruth: list[dict] | None = None,
+    question_indices: list[int] | None = None,
 ) -> Path:
     """Run the question set across every model and write a comparison report.
 
-    If judge=True, an LLM judge grades each answer (Excellent/Good/Partial/Weak)
-    using the source document, the web, and its own knowledge.
+    If judge=True, an LLM judge grades each answer (Excellent/Good/Partial/Weak).
+    When groundtruth is provided, the judge grades against the stored reference
+    (no web/source re-research). Otherwise falls back to source-doc + web judging.
 
     Returns the path to the markdown report.
     """
@@ -149,10 +205,10 @@ def run_query_ab(
     by_model: dict[str, list[dict]] = {}
     for model in models:
         print(f"\n=== Query A/B: {model} ({len(questions)} questions) ===")
-        by_model[model] = _run_one_model(model, questions, stamp)
+        by_model[model] = _run_one_model(model, questions, stamp, question_indices)
 
-    if judge:
-        _judge_all(by_model, source, judge_model, stamp)
+    if judge or groundtruth:
+        _judge_all(by_model, source, judge_model, stamp, groundtruth=groundtruth)
 
     raw_path = out_dir / f"query_ab_{stamp}.jsonl"
     with raw_path.open("w", encoding="utf-8") as f:
@@ -236,6 +292,7 @@ def _write_report(path: Path, models, questions, by_model) -> None:
     lines.append("|---|" + "---|" * len(models))
     for i in range(n):
         cells = []
+        q_num = by_model[models[0]][i]["q"]
         for m in models:
             r = by_model[m][i]
             if judged:
@@ -245,13 +302,14 @@ def _write_report(path: Path, models, questions, by_model) -> None:
                 )
             else:
                 cells.append(f"${r['cost']:.4f} / {r['duration_s']:.1f}s / {r['cycles']}")
-        lines.append(f"| {i+1} | " + " | ".join(cells) + " |")
+        lines.append(f"| {q_num} | " + " | ".join(cells) + " |")
     lines.append("")
 
     # Answers side by side for review
     lines.append("## Answers" + (" and grades" if judged else " (for quality review)") + "\n")
     for i, q in enumerate(questions):
-        lines.append(f"### Q{i+1}. {q}\n")
+        q_num = by_model[models[0]][i]["q"]
+        lines.append(f"### Q{q_num}. {q}\n")
         for m in models:
             r = by_model[m][i]
             grade = f" — **{r['grade']}**" if judged else ""

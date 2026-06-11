@@ -42,7 +42,7 @@ from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.tools.mcp import MCPClient
 
-from shared.neo4j_tools import _run, describe_ontology, snapshot_description_field
+from shared.neo4j_tools import _decode_instance_properties, _run, describe_ontology, snapshot_description_field
 from shared.strands_anthropic import CacheAwareAnthropicModel as AnthropicModel
 from shared.strands_anthropic import cache_control
 from ingest.domain_vocab import DomainVocabulary
@@ -200,6 +200,32 @@ Apply the same generalization discipline as entity labels.
   | `INITIATES` | starts, commences, invokes |
   | `PARTICIPATES_IN` | takes part in, engages with |
 
+## Instance properties
+
+When you create or update an EntityType, you MAY also set its `instance_properties`
+— a JSON string encoding a `{property_name: extraction_hint}` dict that tells the
+instance agent what scalar properties instances of this type commonly carry beyond
+`name`. The instance agent reads this and extracts the listed properties generically
+for every dataset — no per-dataset prompt changes needed.
+
+Set `instance_properties` when the entity type has a short identifier, code, citation,
+or date that:
+- appears **directly in the source text** alongside instances of this type, and
+- would help answer questions about the entity (e.g. "which section defines obligation X?").
+
+Do NOT set it for:
+- `name` — already the MERGE key on every node.
+- Things better captured as relationships to other EntityTypes.
+- Values that are rarely present, highly variable, or free-form narrative.
+
+Format — use a **single-quoted** Cypher string (the JSON inside uses double quotes):
+```cypher
+MERGE (e:EntityType {entityLabel: 'Obligation'})
+SET e.instance_properties = '{"section_ref": "statutory section number (e.g. s. 42(1)) that grounds this obligation, if stated"}'
+```
+
+If `instance_properties` already exists in the snapshot and is accurate, leave it alone.
+
 ## Rules
 
 - Only schema — no instances, no specific names or values from the documents.
@@ -311,14 +337,15 @@ def _fetch_ontology_snapshot() -> dict:
     always available via the `describe_ontology` tool.
     """
     field = snapshot_description_field()
-    entity_types = _run(
+    entity_types = _decode_instance_properties(_run(
         f"""
         MATCH (e:EntityType)
-        RETURN e.entityLabel AS entityLabel,
-               e.{field} AS description
+        RETURN e.entityLabel          AS entityLabel,
+               e.{field}              AS description,
+               e.instance_properties  AS instance_properties
         ORDER BY e.entityLabel
         """
-    )
+    ))
     rels = _run(
         f"""
         MATCH (a:EntityType)-[r:RelType]->(b:EntityType)

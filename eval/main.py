@@ -34,6 +34,30 @@ from eval.models import DEFAULT_MODELS
 from eval.questions import FLTCA_QUESTIONS
 
 _OUT_DEFAULT = str(Path(__file__).parent / "results")
+_GT_DEFAULT = str(Path(__file__).parent / "groundtruth")
+
+
+def _load_questions(spec: str) -> list[str]:
+    """Load a question list from a Python module path (e.g. faa.questions) or .py file."""
+    import importlib
+    import importlib.util
+
+    path = Path(spec)
+    if path.suffix == ".py" and path.exists():
+        module_name = path.stem
+        spec_obj = importlib.util.spec_from_file_location(module_name, path)
+        mod = importlib.util.module_from_spec(spec_obj)
+        spec_obj.loader.exec_module(mod)
+    else:
+        mod = importlib.import_module(spec)
+
+    # Look for any list[str] attribute whose name looks like QUESTIONS
+    for attr in dir(mod):
+        if "QUESTIONS" in attr.upper():
+            val = getattr(mod, attr)
+            if isinstance(val, list) and val and isinstance(val[0], str):
+                return val
+    raise ValueError(f"No QUESTIONS list found in {spec!r}")
 
 
 def main() -> None:
@@ -42,20 +66,49 @@ def main() -> None:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
+    # ── groundtruth ────────────────────────────────────────────────────────────
+    gt = sub.add_parser(
+        "groundtruth",
+        help="Generate reference answers + grading criteria for a question set (run once).",
+    )
+    gt.add_argument(
+        "questions", metavar="QUESTIONS",
+        help="Python module path (e.g. faa.questions) or .py file containing a QUESTIONS list.",
+    )
+    gt.add_argument("--source", required=True, metavar="PATH",
+                    help="Source document(s) to research against (same path used for ingestion).")
+    gt.add_argument("--out", default=None, metavar="PATH",
+                    help=f"Output JSON path (default: {_GT_DEFAULT}/<module_stem>.json).")
+    gt.add_argument("--model", default=None, metavar="MODEL_ID",
+                    help="Researcher model (default: claude-opus-4-8).")
+    gt.add_argument("--resume", action="store_true",
+                    help="Skip questions already present in the output file.")
+
+    # ── query-ab ───────────────────────────────────────────────────────────────
     q = sub.add_parser("query-ab", help="A/B the query phase over the eval question set.")
     q.add_argument("--models", nargs="+", default=DEFAULT_MODELS,
                    help=f"Model ids to compare (default: {' '.join(DEFAULT_MODELS)}).")
+    q.add_argument("--questions", default=None, metavar="QUESTIONS",
+                   help="Python module path or .py file for questions (default: FLTCA built-in).")
     q.add_argument("--limit", type=int, default=None,
                    help="Use only the first N questions.")
+    q.add_argument("--only", default=None, metavar="N[,N...]",
+                   help="Comma-separated question numbers to run (1-based, e.g. --only 11 or "
+                        "--only 11,12). Applied after --limit.")
     q.add_argument("--judge", action="store_true",
                    help="Grade each answer with the LLM judge (Excellent/Good/Partial/Weak).")
+    q.add_argument("--groundtruth", default=None, metavar="PATH",
+                   help="Path to a groundtruth JSON file produced by the groundtruth subcommand. "
+                        "When provided, the judge grades against stored references instead of "
+                        "re-researching (faster, cheaper, consistent). Implies --judge.")
     q.add_argument("--source", default=None, metavar="PATH",
                    help="Source document(s) used to build the graph, given to the judge "
-                        "as ground truth (file or folder). Optional but recommended with --judge.")
+                        "as ground truth (file or folder). Used only when --groundtruth is absent.")
     q.add_argument("--judge-model", default=None, metavar="MODEL_ID",
                    help="Model for the judge (default: a strong independent model).")
     q.add_argument("--out", default=_OUT_DEFAULT, help="Output directory for reports.")
 
+    # ── instance-ab ────────────────────────────────────────────────────────────
     i = sub.add_parser(
         "instance-ab",
         help="A/B the instance phase. DESTRUCTIVE: wipes the instance layer between runs.",
@@ -75,13 +128,51 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "query-ab":
+    if args.command == "groundtruth":
+        from eval.groundtruth import generate_groundtruth
+        questions = _load_questions(args.questions)
+        if args.out:
+            out_path = args.out
+        else:
+            stem = Path(args.questions).stem if Path(args.questions).suffix == ".py" else args.questions.split(".")[-1]
+            out_path = str(Path(_GT_DEFAULT) / f"{stem}.json")
+        generate_groundtruth(
+            questions=questions,
+            source=args.source,
+            out_path=out_path,
+            model_id=args.model,
+            resume=args.resume,
+        )
+
+    elif args.command == "query-ab":
         from eval.query_ab import run_query_ab
-        questions = FLTCA_QUESTIONS[: args.limit] if args.limit else FLTCA_QUESTIONS
+
+        if args.questions:
+            questions = _load_questions(args.questions)
+        else:
+            questions = FLTCA_QUESTIONS
+        if args.limit:
+            questions = questions[: args.limit]
+
+        question_indices: list[int] | None = None
+        if args.only:
+            only_set = {int(x) for x in args.only.replace(" ", ",").split(",") if x.strip()}
+            pairs = [(idx, q) for idx, q in enumerate(questions, 1) if idx in only_set]
+            question_indices = [idx for idx, _ in pairs]
+            questions = [q for _, q in pairs]
+
+        gt = None
+        if args.groundtruth:
+            from eval.groundtruth import load_groundtruth
+            gt = load_groundtruth(args.groundtruth)
+
         run_query_ab(
             args.models, questions, Path(args.out),
-            judge=args.judge, source=args.source, judge_model=args.judge_model,
+            judge=args.judge, source=args.source,
+            judge_model=args.judge_model, groundtruth=gt,
+            question_indices=question_indices,
         )
+
     elif args.command == "instance-ab":
         from eval.instance_ab import run_instance_ab
         run_instance_ab(
