@@ -40,12 +40,21 @@ def load_source_text(source: str | None) -> str | None:
     return "\n\n".join(chunks) if chunks else None
 
 
-def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dict]:
+def _run_one_model(
+    model_id: str,
+    questions: list[str],
+    run_id: str,
+    question_indices: list[int] | None = None,
+) -> list[dict]:
     """Run every question through one model; return per-question records.
 
     One agent per model, conversation reset per question so each question is
     independent and its metrics are isolated. accumulated_usage is cumulative
     across questions, so we diff against the previous question.
+
+    question_indices, when provided, maps each position to its original 1-based
+    question number so --only runs preserve correct groundtruth lookup and report
+    labels. When absent, positions are numbered 1..N as usual.
 
     Also writes a per-model `<run_id>_query_<model>_metrics.jsonl` in the
     ingest/query metrics format so `cost_watch.py` / `ingest cost` can read it.
@@ -59,7 +68,8 @@ def _run_one_model(model_id: str, questions: list[str], run_id: str) -> list[dic
     prev_cycles = 0
     prev_trace_n = 0
     rows: list[dict] = []
-    for i, q in enumerate(questions, 1):
+    for pos, q in enumerate(questions):
+        i = question_indices[pos] if question_indices else pos + 1
         agent.messages = []
         print(f"  [{model_id}] Q{i}/{len(questions)}: {q[:60]}...", flush=True)
         t0 = time.time()
@@ -179,6 +189,7 @@ def run_query_ab(
     source: str | None = None,
     judge_model: str | None = None,
     groundtruth: list[dict] | None = None,
+    question_indices: list[int] | None = None,
 ) -> Path:
     """Run the question set across every model and write a comparison report.
 
@@ -194,7 +205,7 @@ def run_query_ab(
     by_model: dict[str, list[dict]] = {}
     for model in models:
         print(f"\n=== Query A/B: {model} ({len(questions)} questions) ===")
-        by_model[model] = _run_one_model(model, questions, stamp)
+        by_model[model] = _run_one_model(model, questions, stamp, question_indices)
 
     if judge or groundtruth:
         _judge_all(by_model, source, judge_model, stamp, groundtruth=groundtruth)
@@ -281,6 +292,7 @@ def _write_report(path: Path, models, questions, by_model) -> None:
     lines.append("|---|" + "---|" * len(models))
     for i in range(n):
         cells = []
+        q_num = by_model[models[0]][i]["q"]
         for m in models:
             r = by_model[m][i]
             if judged:
@@ -290,13 +302,14 @@ def _write_report(path: Path, models, questions, by_model) -> None:
                 )
             else:
                 cells.append(f"${r['cost']:.4f} / {r['duration_s']:.1f}s / {r['cycles']}")
-        lines.append(f"| {i+1} | " + " | ".join(cells) + " |")
+        lines.append(f"| {q_num} | " + " | ".join(cells) + " |")
     lines.append("")
 
     # Answers side by side for review
     lines.append("## Answers" + (" and grades" if judged else " (for quality review)") + "\n")
     for i, q in enumerate(questions):
-        lines.append(f"### Q{i+1}. {q}\n")
+        q_num = by_model[models[0]][i]["q"]
+        lines.append(f"### Q{q_num}. {q}\n")
         for m in models:
             r = by_model[m][i]
             grade = f" — **{r['grade']}**" if judged else ""

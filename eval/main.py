@@ -92,6 +92,9 @@ def main() -> None:
                    help="Python module path or .py file for questions (default: FLTCA built-in).")
     q.add_argument("--limit", type=int, default=None,
                    help="Use only the first N questions.")
+    q.add_argument("--only", default=None, metavar="N[,N...]",
+                   help="Comma-separated question numbers to run (1-based, e.g. --only 11 or "
+                        "--only 11,12). Applied after --limit.")
     q.add_argument("--judge", action="store_true",
                    help="Grade each answer with the LLM judge (Excellent/Good/Partial/Weak).")
     q.add_argument("--groundtruth", default=None, metavar="PATH",
@@ -151,6 +154,13 @@ def main() -> None:
         if args.limit:
             questions = questions[: args.limit]
 
+        question_indices: list[int] | None = None
+        if args.only:
+            only_set = {int(x) for x in args.only.replace(" ", ",").split(",") if x.strip()}
+            pairs = [(idx, q) for idx, q in enumerate(questions, 1) if idx in only_set]
+            question_indices = [idx for idx, _ in pairs]
+            questions = [q for _, q in pairs]
+
         gt = None
         if args.groundtruth:
             from eval.groundtruth import load_groundtruth
@@ -160,6 +170,7 @@ def main() -> None:
             args.models, questions, Path(args.out),
             judge=args.judge, source=args.source,
             judge_model=args.judge_model, groundtruth=gt,
+            question_indices=question_indices,
         )
 
     elif args.command == "instance-ab":

@@ -452,45 +452,45 @@
   },
   {
     "index": 11,
-    "question": "In what situations does the Director have a direct legal obligation toward individual residents?",
-    "reference_answer": "Under the Fixing Long-Term Care Act, 2021, the 'Director' (the official appointed by the Minister under section 185 to administer and enforce the Act) generally does NOT owe direct legal obligations to individual residents. The Act deliberately places almost all of the direct, individualized duties toward residents on the LICENSEE of the long-term care home (and, at the admission stage, on the placement co-ordinator), not on the Director. The Director's function is primarily systemic oversight, compliance and enforcement, with duties running to the regulatory system and the public rather than to named individuals.\n\nThis distinction is important: it is the licensee, not the Director, who must ensure the Residents' Bill of Rights (s.3) is respected, develop and follow each resident's plan of care, provide 24-hour nursing and personal care, protect residents from abuse and neglect, administer residents' trust accounts, and notify a resident's substitute decision-maker of incidents. Reporting duties (e.g. s.28 reports of harm, abuse, neglect or misuse of a resident's money, and s.27 investigation reports) run FROM licensees and others TO the Director — again positioning the Director as the recipient/enforcer rather than as the party with the direct duty to the resident.\n\nThe situations where the Director's role most directly bears on individual residents (the closest the Director comes to an obligation engaging a specific resident) are enforcement/oversight functions rather than care duties:\n- Section 29: the Director SHALL have an inspector conduct an inspection or make inquiries whenever the Director receives information from any source indicating that, in respect of a resident, there may have been improper or incompetent treatment/care causing harm or risk of harm, abuse, unlawful conduct causing harm or risk of harm, neglect, or misuse/misappropriation of a resident's money or of funding. This is a mandatory duty triggered by information about harm to residents.\n- The Director's enforcement powers (compliance orders, management orders, appointing a long-term care home supervisor, and licensing decisions) are exercised to protect 'the care, safety, security and rights of residents,' but these orders are directed at the licensee.\n\nBy contrast, the obligations to give an individual applicant notice of an eligibility determination, the reasons, and the right to appeal to the Appeal Board fall on the PLACEMENT CO-ORDINATOR (s.50(8)) and the Appeal Board (s.59), not on the Director; and the Minister (not the Director) is the party entitled to be heard on those appeals. Even the statutory immunity provisions (s.191) shield the Director from being personally liable to individuals for acts done in good faith under the Act, reinforcing that the Director's duties are public/regulatory rather than private duties owed to particular residents.\n\nIn short: the Director has essentially no direct, individualized care obligations toward residents; those run to the licensee (and placement co-ordinator). The Director's resident-facing obligations are oversight duties — chiefly the mandatory s.29 duty to order an inspection or inquiry when informed of possible harm, abuse, neglect, or financial misappropriation affecting a resident — exercised through enforcement directed at the licensee rather than through a direct duty of care owed to the individual.",
+    "question": "Under the Act, who bears direct legal obligations to individual residents — the Licensee or the Director — and what is the structural difference between their respective roles in ensuring resident welfare?",
+    "reference_answer": "Under the Fixing Long-Term Care Act, 2021 (Ontario), it is the LICENSEE — not the Director — that bears the direct legal obligations owed to individual residents. The licensee is defined (s. 2(1)) as the holder of a licence issued under the Act (including a municipality or board of management maintaining a municipal, joint or First Nations home under Part IX). The Act imposes resident-facing duties on the licensee through repeated mandatory language of the form 'Every licensee of a long-term care home shall ensure...'. For example, s. 3(1) requires every licensee to ensure the rights set out in the Residents' Bill of Rights are fully respected and promoted (treatment with respect, freedom from abuse and neglect, quality care, proper accommodation/nutrition, participation in the plan of care, etc.); s. 11 requires the licensee to ensure 24-hour nursing care and a registered nurse on duty; s. 12 requires the licensee to ensure palliative care; and the licensee must investigate and respond to incidents of abuse/neglect. Thus the licensee is the front-line, operational duty-bearer accountable to each resident, and staff act as employees or contractors of the licensee.\n\nThe DIRECTOR, by contrast, is a government oversight official appointed by/under section 185 of the Act (and where more than one Director is appointed, the relevant one for the provision in question). The Director does NOT provide care and does not bear direct legal obligations to individual residents. Instead the Director's role is regulatory and supervisory, sitting one structural level removed from the resident: the Director decides eligibility for and issues licences (ss. 101, 102, 103) subject to Ministerial determinations/policy and restrictions (ss. 99, 100); receives mandatory reports and complaints from licensees, staff and others (e.g. licensees must immediately forward written complaints and report the results of investigations to the Director under ss. 25/26 and 28); must have an inspector conduct inspections or inquiries where information suggests harm, abuse, neglect, unlawful conduct or misappropriation has occurred (s. 29); and exercises enforcement and compliance powers against the licensee. \n\nThe structural difference is therefore one of LAYERED ACCOUNTABILITY: the licensee owes the primary, direct, day-to-day duties of care, safety and rights to each resident and is the entity that can be ordered to comply or be sanctioned; the Director protects resident welfare INDIRECTLY by licensing, monitoring, receiving reports, ordering inspections and enforcing the Act against the licensee. The resident's welfare is thus secured at two levels — direct duties imposed on the licensee, and a government oversight/enforcement mechanism vested in the Director who holds the licensee to account rather than delivering care personally.",
     "grading_criteria": {
       "excellent": [
-        "Must make the central distinction that direct, individualized duties toward residents are imposed on the LICENSEE (and placement co-ordinator), NOT on the appointed Director (s.185 official)",
-        "Must explain that the Director's role is primarily systemic oversight/enforcement (inspections, orders, licensing) rather than a direct duty of care owed to individual residents",
-        "Should identify the section 29 mandatory duty: the Director SHALL have an inspector conduct an inspection/inquiries upon receiving information of possible harm, abuse, neglect, improper care, or misuse/misappropriation of a resident's money",
-        "Should note that reporting obligations (e.g. s.28) run TO the Director rather than the Director owing them, positioning the Director as recipient/enforcer",
-        "May note that notice/appeal duties to individual applicants rest with the placement co-ordinator (s.50(8)) and Appeal Board (s.59), and/or that immunity provisions (s.191) shield the Director from personal liability to individuals"
+        "Must clearly state that the LICENSEE bears the direct legal obligations to individual residents, not the Director",
+        "Must identify the licensee as the holder of the licence and cite the recurring statutory duty language 'Every licensee ... shall ensure' (e.g. s. 3 Residents' Bill of Rights, s. 11 nursing care, s. 12 palliative care)",
+        "Must identify the Director as a government official appointed under section 185 whose role is regulatory/oversight rather than care delivery",
+        "Must articulate the structural difference: licensee = direct/front-line duty-bearer to residents; Director = indirect oversight via licensing, receiving reports/complaints, ordering inspections (s. 29) and enforcement against the licensee",
+        "Should note at least one concrete Director function (issuing licences ss. 101-102, receiving mandatory reports/complaints ss. 25/28, ordering inspections s. 29)"
       ],
       "good": [
-        "Correctly states the Director's obligations toward residents are largely indirect/oversight-based and that direct duties sit with the licensee",
-        "Identifies at least one concrete Director-resident touchpoint, especially the s.29 mandatory inspection trigger on receiving information about harm/abuse/neglect/money misuse",
-        "May miss the placement co-ordinator/Appeal Board nuance or the immunity provision",
-        "Approximate section references acceptable"
+        "Correctly identifies the licensee as bearing direct obligations to residents and the Director as an oversight/regulatory figure",
+        "Captures the two-level (direct duty vs. enforcement/oversight) structural distinction",
+        "May omit some specific section numbers or give only one or two examples of licensee duties or Director functions",
+        "Approximate descriptions of Director powers acceptable as long as the oversight-vs-direct-care contrast is correct"
       ],
-      "partial": "Discusses the Director and residents in general terms but conflates the appointed Director with corporate licensee 'directors' or with the licensee's care duties, without clearly establishing that direct resident obligations lie with the licensee and the Director's role is oversight/enforcement.",
-      "weak": "Fails to distinguish the Director from the licensee, fabricates direct care duties owed by the Director to residents, or gives an answer unsupported by the Act (e.g. claims the Director personally provides or guarantees care to individuals)."
+      "partial": "Identifies that the licensee has obligations and the Director has some supervisory role but is vague about the structural distinction, conflates their roles, or fails to clearly state the Director does not owe direct duties to residents.",
+      "weak": "States that the Director bears the direct obligations to residents, fabricates the Director as a care provider, confuses the 'Director' with the home's 'Director of Nursing and Personal Care', or fails to address the structural difference at all."
     },
     "key_facts": [
-      "Direct duties toward individual residents are imposed on the LICENSEE, not the appointed Director",
-      "The 'Director' is the person appointed under section 185 to administer/enforce the Act (distinct from corporate directors of a licensee)",
-      "Section 29: the Director shall have an inspector conduct an inspection or make inquiries when informed that there may have been improper/incompetent care, abuse, unlawful conduct, neglect, or misuse/misappropriation of a resident's money causing harm or risk of harm to a resident",
-      "Reporting duties (e.g. section 28 critical incident reports and section 27 investigation reports) run FROM licensees/others TO the Director",
-      "Notice of eligibility determination, reasons, and the right to appeal to the Appeal Board are obligations of the placement co-ordinator (s.50(8)) and Appeal Board (s.59), not the Director",
-      "The Director's enforcement powers (compliance orders, management orders, appointment of a supervisor, licensing) are directed at the licensee to protect residents' care, safety, security and rights",
-      "Section 191 grants immunity protecting the Director from personal liability to individuals for good-faith acts under the Act"
+      "The licensee (holder of a licence under the Act) bears the direct legal obligations to individual residents",
+      "The Act repeatedly uses 'Every licensee of a long-term care home shall ensure...' to impose duties (e.g. Residents' Bill of Rights s. 3, 24-hour nursing care s. 11, palliative care s. 12)",
+      "The Director is a person appointed under section 185 of the Act",
+      "The Director's role is regulatory/oversight: issuing licences (ss. 101-102), receiving complaints and investigation reports (ss. 25, 28), and ordering inspections/inquiries (s. 29)",
+      "Structural difference: the licensee is the front-line duty-bearer accountable directly to residents, while the Director protects resident welfare indirectly by licensing, monitoring and enforcing the Act against the licensee",
+      "Staff work as employees or contractors of the licensee, not of the Director",
+      "The 'Director' should not be confused with the home's 'Director of Nursing and Personal Care' (s. 77), a separate role"
     ],
-    "generated_at": "2026-06-10T20:33:36.995027+00:00",
+    "generated_at": "2026-06-10T21:50:22.654135+00:00",
     "research_model": "claude-opus-4-8",
     "source_path": "/Users/brianokeefe/Documents/data/OntarioLongTermCareAct/",
-    "duration_s": 67.78,
+    "duration_s": 38.8,
     "usage": {
-      "inputTokens": 72309,
-      "cacheWriteInputTokens": 28893,
-      "cacheReadInputTokens": 83339,
-      "outputTokens": 4440
+      "inputTokens": 33944,
+      "cacheWriteInputTokens": 11046,
+      "cacheReadInputTokens": 9560,
+      "outputTokens": 2965
     },
-    "cost": 2.0843872500000002
+    "cost": 0.9529875000000001
   },
   {
     "index": 12,

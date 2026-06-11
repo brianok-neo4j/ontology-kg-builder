@@ -21,7 +21,7 @@ FLTCA_QUESTIONS: list[str] = [
     "Show me the full normative structure for the Licensee — what obligations, "
     "prohibitions, and rights apply to them?",
     "What is the complete chain from a resident complaint to a sanction being issued?",
-    "In what situations does the Director have a direct legal obligation toward individual residents?",
+    "Under the Act, who bears direct legal obligations to individual residents — the Licensee or the Director — and what is the structural difference between their respective roles in ensuring resident welfare?",
     "What specifically is a Licensee required to report to the Director?",
     "What does the Act prohibit a Licensee from doing to a resident?",
     "Who is responsible for investigating a complaint about abuse?",
