@@ -169,7 +169,26 @@ worse than a missing one. Within that bound, be exhaustive.
    (legal documents have section numbers; accident reports have tail numbers;
    clinical documents have dosage codes) but the extraction rule is the same.
 
-10. **After the write-cypher tool executes successfully, stop immediately.** Do
+10. **Quantitative values.** Whenever the chunk text explicitly states a
+    monetary amount, rate, cap, limit, duration, deadline, or count that
+    characterises an entity, store it as a node property even if it is not
+    listed in `instance_properties`. Use the most descriptive key available:
+    `amount` for a fixed figure, `max_amount` for a ceiling/cap, `min_amount`
+    for a floor, `rate` for a per-unit figure, `duration_days` for a time
+    limit, `deadline` for a due date, etc. The same "only if explicitly stated"
+    rule applies — never infer or fabricate figures.
+
+    ```cypher
+    // s.158(3)(a): "shall not exceed $250,000"
+    MERGE (s:Sanction {name: 'Administrative Penalty'})
+    SET s.max_amount = 250000
+
+    // "within 10 business days"
+    MERGE (ob:Obligation {name: 'Respond to written complaint'})
+    SET ob.deadline = '10 business days'
+    ```
+
+11. **After the write-cypher tool executes successfully, stop immediately.** Do
     not produce any closing text, confirmation, or summary. Silence after the
     tool call is correct behaviour.
 """

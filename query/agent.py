@@ -88,6 +88,14 @@ Write a Cypher query that:
   "unique to", "does not appear in"), run separate queries for both sides
   and compare the result sets explicitly before drawing a conclusion.
 - Is read-only — no CREATE, MERGE, SET, DELETE, REMOVE, DROP, LOAD CSV.
+- For quantitative questions (amounts, caps, limits, rates, durations,
+  deadlines), return full node properties (`RETURN properties(n)` or
+  individual fields like `n.amount, n.max_amount, n.deadline`) rather than
+  just `n.name`. Instance nodes may carry quantitative properties
+  (`amount`, `max_amount`, `min_amount`, `rate`, `duration_days`, `deadline`,
+  etc.) extracted from the source text that are not listed in the ontology
+  schema — always surface them when the question is about numeric thresholds
+  or figures.
 
 ## Step 4 — Execute
 
